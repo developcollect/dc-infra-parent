@@ -6,7 +6,7 @@
     <parent>
         <artifactId>dc-infra-parent</artifactId>
         <groupId>com.developcollect</groupId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
     <artifactId>dc-infra-spring</artifactId>
 
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>com.developcollect</groupId>
             <artifactId>dc-infra-core</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 
