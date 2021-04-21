@@ -45,6 +45,7 @@
 		<servlet.version>4.0.1</servlet.version>
 		<cglib.version>3.3.0</cglib.version>
 		<selenium-java.version>3.141.59</selenium-java.version>
+		<zxing.version>3.4.1</zxing.version>
 	</properties>
 
 	<dependencyManagement>
@@ -88,6 +89,12 @@
 				<groupId>com.thoughtworks.xstream</groupId>
 				<artifactId>xstream</artifactId>
 				<version>${xstream.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.google.zxing</groupId>
+				<artifactId>core</artifactId>
+				<version>${zxing.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
