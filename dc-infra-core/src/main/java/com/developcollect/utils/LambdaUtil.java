@@ -3,7 +3,6 @@ package com.developcollect.utils;
 
 import cn.hutool.core.lang.SimpleCache;
 import cn.hutool.core.util.ReflectUtil;
-import com.developcollect.lang.annotation.SerializableFunction;
 
 import java.beans.Introspector;
 import java.io.Serializable;
@@ -23,33 +22,30 @@ public class LambdaUtil {
      * 解析lambda表达式,加了缓存。
      * 该缓存可能会在任意不定的时间被清除
      *
-     * @param <T> Lambda类型
      * @param func 需要解析的 lambda 对象（无参方法）
      * @return 返回解析后的结果
      */
-    public static <T> SerializedLambda resolve(SerializableFunction<T, ?> func) {
+    public static SerializedLambda resolve(Serializable func) {
         return _resolve(func);
     }
 
     /**
      * 获取lambda表达式函数（方法）名称
      *
-     * @param <T> Lambda类型
      * @param func 函数（无参方法）
      * @return 函数名称
      */
-    public static <T> String getMethodName(SerializableFunction<T, ?> func) {
+    public static String getMethodName(Serializable func) {
         return resolve(func).getImplMethodName();
     }
 
     /**
      * 当lambda表达式函数（方法）是一个get方法时，获取字段名称
      *
-     * @param <T> Lambda类型
      * @param func 函数（无参方法）
      * @return 字段名称
      */
-    public static <T> String getFieldName(SerializableFunction<T, ?> func) {
+    public static String getFieldName(Serializable func) {
         String methodName = getMethodName(func);
         if (methodName.startsWith("get")) {
             return Introspector.decapitalize(methodName.substring(3));
