@@ -59,10 +59,6 @@ public class BuildVersion {
             return null;
         }
         HashMap<String, String> map = new HashMap<>(3);
-        //#Created by Apache Maven 3.6.3
-        //version=x2.0.1-jeemsp
-        //groupId=com.jeecms
-        //artifactId=module-copyright-protection
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
