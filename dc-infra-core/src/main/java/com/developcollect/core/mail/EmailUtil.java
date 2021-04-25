@@ -1,4 +1,4 @@
-package com.developcollect.core.utils;
+package com.developcollect.core.mail;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.IoUtil;
@@ -7,17 +7,19 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.mail.Mail;
 import cn.hutool.extra.mail.MailAccount;
 
+import javax.activation.DataSource;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * 邮箱工具类
  *
- * @author Zhu Kaixiao
+ * @author zak
  * @version 1.0
  * @date 2020/11/12 15:17
  */
@@ -42,6 +44,10 @@ public class EmailUtil {
         return send(to, subject, content, false, files);
     }
 
+    public static String sendText(String to, String subject, String content, DataSource... dataSources) {
+        return send(to, subject, content, false, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送HTML邮件，发送给单个或多个收件人<br>
      * 多个收件人可以使用逗号“,”分隔，也可以通过分号“;”分隔
@@ -57,6 +63,10 @@ public class EmailUtil {
         return send(to, subject, content, true, files);
     }
 
+    public static String sendHtml(String to, String subject, String content, DataSource... dataSources) {
+        return send(to, subject, content, true, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送邮件，发送单个或多个收件人<br>
      * 多个收件人可以使用逗号“,”分隔，也可以通过分号“;”分隔
@@ -70,6 +80,10 @@ public class EmailUtil {
      */
     public static String send(String to, String subject, String content, boolean isHtml, File... files) {
         return send(splitAddress(to), subject, content, isHtml, files);
+    }
+
+    public static String send(String to, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(splitAddress(to), subject, content, isHtml, dataSources);
     }
 
     /**
@@ -90,6 +104,10 @@ public class EmailUtil {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, isHtml, files);
     }
 
+    public static String send(String to, String cc, String bcc, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, isHtml, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送文本邮件，发送给多人
      *
@@ -101,6 +119,10 @@ public class EmailUtil {
      */
     public static String sendText(Collection<String> tos, String subject, String content, File... files) {
         return send(tos, subject, content, false, files);
+    }
+
+    public static String sendText(Collection<String> tos, String subject, String content, DataSource... dataSources) {
+        return send(tos, subject, content, false, dataSources);
     }
 
     /**
@@ -117,6 +139,10 @@ public class EmailUtil {
         return send(tos, subject, content, true, files);
     }
 
+    public static String sendHtml(Collection<String> tos, String subject, String content, DataSource... dataSources) {
+        return send(tos, subject, content, true, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送邮件，发送给多人
      *
@@ -129,6 +155,10 @@ public class EmailUtil {
      */
     public static String send(Collection<String> tos, String subject, String content, boolean isHtml, File... files) {
         return send(tos, null, null, subject, content, isHtml, files);
+    }
+
+    public static String send(Collection<String> tos, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(tos, null, null, subject, content, isHtml, dataSources);
     }
 
     /**
@@ -146,6 +176,10 @@ public class EmailUtil {
      */
     public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, File... files) {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, null, isHtml, files);
+    }
+
+    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, null, isHtml, dataSources);
     }
 
     // ------------------------------------------------------------------------------------------------------------------------------- Custom MailAccount
@@ -166,6 +200,10 @@ public class EmailUtil {
         return send(mailAccount, splitAddress(to), subject, content, isHtml, files);
     }
 
+    public static String send(MailAccount mailAccount, String to, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, splitAddress(to), subject, content, isHtml, dataSources);
+    }
+
     /**
      * 发送邮件给多人
      *
@@ -179,6 +217,10 @@ public class EmailUtil {
      */
     public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, boolean isHtml, File... files) {
         return send(mailAccount, tos, null, null, subject, content, isHtml, files);
+    }
+
+    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, tos, null, null, subject, content, isHtml, dataSources);
     }
 
     /**
@@ -199,6 +241,10 @@ public class EmailUtil {
         return send(mailAccount, false, tos, ccs, bccs, subject, content, null, isHtml, files);
     }
 
+    public static String send(MailAccount mailAccount, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, false, tos, ccs, bccs, subject, content, null, isHtml, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送HTML邮件，发送给单个或多个收件人<br>
      * 多个收件人可以使用逗号“,”分隔，也可以通过分号“;”分隔
@@ -215,6 +261,10 @@ public class EmailUtil {
         return send(to, subject, content, imageMap, true, files);
     }
 
+    public static String sendHtml(String to, String subject, String content, Map<String, InputStream> imageMap, DataSource... dataSources) {
+        return send(to, subject, content, imageMap, true, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送邮件，发送单个或多个收件人<br>
      * 多个收件人可以使用逗号“,”分隔，也可以通过分号“;”分隔
@@ -229,6 +279,10 @@ public class EmailUtil {
      */
     public static String send(String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, File... files) {
         return send(splitAddress(to), subject, content, imageMap, isHtml, files);
+    }
+
+    public static String send(String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(splitAddress(to), subject, content, imageMap, isHtml, dataSources);
     }
 
     /**
@@ -250,6 +304,10 @@ public class EmailUtil {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, imageMap, isHtml, files);
     }
 
+    public static String send(String to, String cc, String bcc, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, imageMap, isHtml, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送HTML邮件，发送给多人
      *
@@ -265,6 +323,10 @@ public class EmailUtil {
         return send(tos, subject, content, imageMap, true, files);
     }
 
+    public static String sendHtml(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, DataSource... dataSources) {
+        return send(tos, subject, content, imageMap, true, dataSources);
+    }
+
     /**
      * 使用配置文件中设置的账户发送邮件，发送给多人
      *
@@ -278,6 +340,10 @@ public class EmailUtil {
      */
     public static String send(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, File... files) {
         return send(tos, null, null, subject, content, imageMap, isHtml, files);
+    }
+
+    public static String send(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(tos, null, null, subject, content, imageMap, isHtml, dataSources);
     }
 
     /**
@@ -296,6 +362,10 @@ public class EmailUtil {
      */
     public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, File... files) {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, imageMap, isHtml, files);
+    }
+
+    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, imageMap, isHtml, dataSources);
     }
 
     // ------------------------------------------------------------------------------------------------------------------------------- Custom MailAccount
@@ -317,6 +387,10 @@ public class EmailUtil {
         return send(mailAccount, splitAddress(to), subject, content, imageMap, isHtml, files);
     }
 
+    public static String send(MailAccount mailAccount, String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, splitAddress(to), subject, content, imageMap, isHtml, dataSources);
+    }
+
     /**
      * 发送邮件给多人
      *
@@ -332,6 +406,10 @@ public class EmailUtil {
      */
     public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, File... files) {
         return send(mailAccount, tos, null, null, subject, content, imageMap, isHtml, files);
+    }
+
+    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, tos, null, null, subject, content, imageMap, isHtml, dataSources);
     }
 
     /**
@@ -354,6 +432,11 @@ public class EmailUtil {
         return send(mailAccount, false, tos, ccs, bccs, subject, content, imageMap, isHtml, files);
     }
 
+    public static String send(MailAccount mailAccount, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap,
+                              boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, false, tos, ccs, bccs, subject, content, imageMap, isHtml, dataSources);
+    }
+
     // ------------------------------------------------------------------------------------------------------------------------ Private method start
 
     /**
@@ -374,6 +457,17 @@ public class EmailUtil {
      */
     private static String send(MailAccount mailAccount, boolean useGlobalSession, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content,
                                Map<String, InputStream> imageMap, boolean isHtml, File... files) {
+        return send(mailAccount, useGlobalSession, tos, ccs, bccs, subject, content, imageMap, isHtml, mail -> mail.setFiles(files));
+    }
+
+    private static String send(MailAccount mailAccount, boolean useGlobalSession, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content,
+                               Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+        return send(mailAccount, useGlobalSession, tos, ccs, bccs, subject, content, imageMap, isHtml, mail -> mail.setAttachments(dataSources));
+    }
+
+
+    private static String send(MailAccount mailAccount, boolean useGlobalSession, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content,
+                               Map<String, InputStream> imageMap, boolean isHtml, Consumer<Mail> mailConsumer) {
         final Mail mail = Mail.create(mailAccount).setUseGlobalSession(useGlobalSession);
 
         // 可选抄送人
@@ -389,7 +483,7 @@ public class EmailUtil {
         mail.setTitle(subject);
         mail.setContent(content);
         mail.setHtml(isHtml);
-        mail.setFiles(files);
+        mailConsumer.accept(mail);
 
         // 图片
         if (MapUtil.isNotEmpty(imageMap)) {
