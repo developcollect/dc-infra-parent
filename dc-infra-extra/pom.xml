@@ -24,6 +24,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.5</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
             <groupId>com.developcollect</groupId>
             <artifactId>dc-infra-core</artifactId>
             <version>${project.parent.version}</version>
