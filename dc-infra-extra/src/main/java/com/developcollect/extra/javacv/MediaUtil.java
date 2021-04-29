@@ -479,6 +479,7 @@ public class MediaUtil {
         //recorder.setSampleFormat(frameGrabber.getSampleFormat());
         recorder.setSampleRate(grabber.getSampleRate());
         //recorder.setAudioChannels(1);
+        // 看到命令行上有这些参数，不知道加了有用不。。。
         // preset的参数主要调节编码速度和质量的平衡，有ultrafast、superfast、veryfast、faster、fast、medium、slow、slower、veryslow、placebo这10个选项，从快到慢。
         recorder.setVideoOption("preset", "medium");
         recorder.setVideoOption("crf", "26");
