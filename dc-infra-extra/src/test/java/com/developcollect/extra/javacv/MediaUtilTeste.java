@@ -9,6 +9,7 @@ import sun.plugin2.util.SystemUtil;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
+import java.io.File;
 
 public class MediaUtilTeste {
 
@@ -55,6 +56,25 @@ public class MediaUtilTeste {
         MediaUtil.getAudioFromVideo(
                 "C:\\Users\\win005\\Videos\\Concession_LAN_800k.mp4",
                 "E:\\laboratory\\tmp\\" + System.currentTimeMillis() + ".mp3"
+        );
+    }
+
+    @Test
+    public void test_compressVideo1() {
+        MediaUtil.compressVideo(
+                "C:\\Users\\win005\\Videos\\222.mp4",
+                "E:\\laboratory\\tmp\\" + System.currentTimeMillis() + ".mp4"
+        );
+
+    }
+
+
+    @Test
+    public void test_compressVideo2() {
+        com.developcollect.extra.media.MediaUtil.setFFmpegPath("D:\\\\Program-g\\\\ffmpeg-20190519-fbdb3aa-win64-static\\\\bin\\\\ffmpeg.exe");
+        com.developcollect.extra.media.MediaUtil.zipAndConvertVideoToMp4(
+                new File("C:\\Users\\win005\\Videos\\222.mp4"),
+                FileUtil.file("E:\\laboratory\\tmp\\" + System.currentTimeMillis() + ".mp4")
         );
 
     }

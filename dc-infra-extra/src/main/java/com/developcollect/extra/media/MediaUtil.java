@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
  * @author Zhu Kaixiao
  * @date 2019/5/21 14:49
  **/
+@Deprecated
 public class MediaUtil {
     private static final Logger log = LoggerFactory.getLogger(MediaUtil.class);
     /**

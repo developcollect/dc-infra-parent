@@ -5,6 +5,7 @@ import com.developcollect.core.utils.StrUtil;
 import com.developcollect.extra.javacv.meta.AudioMetaInfo;
 import com.developcollect.extra.javacv.meta.VideoMetaInfo;
 import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacv.*;
 
@@ -99,6 +100,43 @@ public class MediaUtil {
                 try {
                     grabber.stop();
                 } catch (FFmpegFrameGrabber.Exception e) {
+                    LambdaUtil.raise(e);
+                }
+            }
+        }
+    }
+
+    private static void record(FFmpegFrameGrabber grabber, String mediaPath, FFmpegRecordFunction recordFunction) {
+        FFmpegFrameRecorder recorder = null;
+        try {
+            recorder = new FFmpegFrameRecorder(mediaPath, grabber.getAudioChannels());
+            recordFunction.record(recorder);
+        } catch (Exception e) {
+            LambdaUtil.raise(e);
+        } finally {
+            if (recorder != null) {
+                try {
+                    recorder.stop();
+                    recorder.release();
+                } catch (FFmpegFrameRecorder.Exception e) {
+                    LambdaUtil.raise(e);
+                }
+            }
+        }
+    }
+
+    private static void record(FFmpegFrameGrabber grabber, OutputStream outputStream, FFmpegRecordFunction recordFunction) {
+        FFmpegFrameRecorder recorder = null;
+        try {
+            recorder = new FFmpegFrameRecorder(outputStream, grabber.getAudioChannels());
+            recordFunction.record(recorder);
+        } catch (Exception e) {
+            LambdaUtil.raise(e);
+        } finally {
+            if (recorder != null) {
+                try {
+                    recorder.stop();
+                } catch (FFmpegFrameRecorder.Exception e) {
                     LambdaUtil.raise(e);
                 }
             }
@@ -345,7 +383,129 @@ public class MediaUtil {
         }
     }
 
-    // todo 压缩视频
+
+    // 视频压缩
+
+    public static void compressVideo(String videoFilePath, String targetFilePath) {
+        compressVideo(videoFilePath, targetFilePath, -1, -1, 15, 300000);
+    }
+
+    public static void compressVideo(String videoFilePath, String targetFilePath, int width, int height, int frameRate, int videoBitrate) {
+        grab(videoFilePath, grabber -> {
+            record(grabber, targetFilePath, recorder -> compressVideo(grabber, recorder, width, height, frameRate, videoBitrate));
+            return null;
+        });
+    }
+
+    public static void compressVideo(InputStream inputStream, OutputStream outputStream) {
+        compressVideo(inputStream, outputStream, -1, -1, 15, 2400000);
+    }
+
+    public static void compressVideo(InputStream inputStream, OutputStream outputStream, int width, int height, int frameRate, int videoBitrate) {
+        grab(inputStream, grabber -> {
+            record(grabber, outputStream, recorder -> compressVideo(grabber, recorder, width, height, frameRate, videoBitrate));
+            return null;
+        });
+    }
+
+    public static void compressVideo(String videoFilePath, OutputStream outputStream) {
+        compressVideo(videoFilePath, outputStream, -1, -1, 15, 2400000);
+    }
+
+    public static void compressVideo(String videoFilePath, OutputStream outputStream, int width, int height, int frameRate, int videoBitrate) {
+        grab(videoFilePath, grabber -> {
+            record(grabber, outputStream, recorder -> compressVideo(grabber, recorder, width, height, frameRate, videoBitrate));
+            return null;
+        });
+    }
+
+    public static void compressVideo(InputStream inputStream, String targetFilePath) {
+        compressVideo(inputStream, targetFilePath, -1, -1, 20, 2400000);
+    }
+
+    public static void compressVideo(InputStream inputStream, String targetFilePath, int width, int height, int frameRate, int videoBitrate) {
+        grab(inputStream, grabber -> {
+            record(grabber, targetFilePath, recorder -> compressVideo(grabber, recorder, width, height, frameRate, videoBitrate));
+            return null;
+        });
+    }
 
 
+
+
+
+    /**
+     * 压缩并转换视频为mp4
+     * 但是相比于通过命令执行压缩，视频会更糊，目前不知道是为什么
+     * ffmpeg.exe -i C:\Users\win005\Videos\222.mp4 -s 640x360 -vcodec libx264 -preset medium -crf 26 -movflags faststart -r 15 -b:v 300k -y E:\laboratory\tmp\1619679553890.mp4
+     * @param grabber
+     * @param recorder
+     * @param width
+     * @param height
+     * @param frameRate
+     * @param videoBitrate
+     * @throws FFmpegFrameRecorder.Exception
+     */
+    private static void compressVideo(FFmpegFrameGrabber grabber, FFmpegFrameRecorder recorder,
+                                      int width, int height, int frameRate, int videoBitrate) throws FFmpegFrameRecorder.Exception {
+        int originWidth = grabber.getImageWidth();
+        int originHeight = grabber.getImageHeight();
+        if (width <= 0 && height <= 0) {
+            // 如果分辨率宽度大于640, 则调整为640, 高度等比缩放
+            // 如果分辨率宽度不大于640, 那就再判断高度是否大于640, 如果是则调整为640, 宽度同样等比缩放
+            if (originWidth > 640) {
+                width = 640;
+                height = width * originHeight / originWidth;
+                // 确保是2的倍数
+                height &= 0xFFFF_FFFE;
+            } else if (originHeight > 640) {
+                height = 640;
+                width = height * originWidth / originHeight;
+                width &= 0xFFFF_FFFE;
+            } else {
+                width = originWidth;
+                height = originHeight;
+            }
+        } else if (width <= 0) {
+            width = height * originWidth / originHeight;
+            width &= 0xFFFF_FFFE;
+        } else if (height <= 0) {
+            height = width * originHeight / originWidth;
+            // 确保是2的倍数
+            height &= 0xFFFF_FFFE;
+        }
+        recorder.setFrameRate(frameRate);
+        //下面这行打开就报错
+        //recorder.setSampleFormat(frameGrabber.getSampleFormat());
+        recorder.setSampleRate(grabber.getSampleRate());
+        //recorder.setAudioChannels(1);
+        // preset的参数主要调节编码速度和质量的平衡，有ultrafast、superfast、veryfast、faster、fast、medium、slow、slower、veryslow、placebo这10个选项，从快到慢。
+        recorder.setVideoOption("preset", "medium");
+        recorder.setVideoOption("crf", "26");
+        recorder.setVideoOption("movflags", "faststart");
+        // yuv420p,像素
+        recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
+        recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
+        recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+        recorder.setFormat("mp4");
+        //比特
+        recorder.setVideoBitrate(videoBitrate);
+//        recorder.setAudioBitrate(audioBitrate);
+        recorder.setImageWidth(width);
+        recorder.setImageHeight(height);
+        recorder.start();
+
+
+        while (true) {
+            try {
+                Frame frame = grabber.grabFrame();
+                if (frame == null) {
+                    break;
+                }
+//                recorder.setTimestamp(grabber.getTimestamp());
+                recorder.record(frame);
+            } catch (Exception ignore) {
+            }
+        }
+    }
 }
