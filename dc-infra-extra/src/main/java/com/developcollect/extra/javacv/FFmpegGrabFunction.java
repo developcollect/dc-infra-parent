@@ -10,6 +10,6 @@ import org.bytedeco.javacv.FFmpegFrameGrabber;
 @FunctionalInterface
 public interface FFmpegGrabFunction<T> {
 
-    T grab(FFmpegFrameGrabber grabber) throws FFmpegFrameGrabber.Exception;
+    T grab(FFmpegFrameGrabber grabber) throws Exception;
 
 }

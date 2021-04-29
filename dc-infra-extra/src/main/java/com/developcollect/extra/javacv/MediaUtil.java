@@ -6,12 +6,11 @@ import com.developcollect.extra.javacv.meta.AudioMetaInfo;
 import com.developcollect.extra.javacv.meta.VideoMetaInfo;
 import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.Java2DFrameConverter;
+import org.bytedeco.javacv.*;
 
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * @author Zhu KaiXiao
@@ -21,30 +20,55 @@ import java.io.InputStream;
 public class MediaUtil {
 
 
+    /**
+     * 获取音频信息
+     * @param audioFilePath 音频文件路径
+     * @return 音频信息
+     */
     public static AudioMetaInfo getAudioMetaInfo(String audioFilePath) {
         return grab(audioFilePath, MediaUtil::getAudioMetaInfo);
     }
 
+    /**
+     * 获取音频信息
+     * @param inputStream 输入流
+     * @return 音频信息
+     */
     public static AudioMetaInfo getAudioMetaInfo(InputStream inputStream) {
         return grab(inputStream, MediaUtil::getAudioMetaInfo);
     }
 
+    /**
+     * 获取视频信息
+     * @param videoFilePath 视频文件路径
+     * @return 视频信息
+     */
     public static VideoMetaInfo getVideoMetaInfo(String videoFilePath)  {
         return grab(videoFilePath, MediaUtil::getVideoMetaInfo);
     }
 
+    /**
+     * 获取视频信息
+     * @param inputStream 输入流
+     * @return 视频信息
+     */
     public static VideoMetaInfo getVideoMetaInfo(InputStream inputStream)  {
         return grab(inputStream, MediaUtil::getVideoMetaInfo);
     }
 
 
-    private static <T> T grab(String mediaPath, FFmpegGrabFunction<T> metaInfoFetcher) {
+    /**
+     * 处理多媒体文件，在这个方法中会开启FFmpegFrameGrabber和关闭FFmpegFrameGrabber
+     * @param mediaPath 媒体文件路径
+     * @param grabFunction 处理方法
+     */
+    private static <T> T grab(String mediaPath, FFmpegGrabFunction<T> grabFunction) {
         FFmpegFrameGrabber grabber = null;
         try {
             grabber = FFmpegFrameGrabber.createDefault(mediaPath);
             grabber.start();
-            return metaInfoFetcher.grab(grabber);
-        } catch (FFmpegFrameGrabber.Exception e) {
+            return grabFunction.grab(grabber);
+        } catch (Exception e) {
             return LambdaUtil.raise(e);
         } finally {
             if (grabber != null) {
@@ -57,13 +81,18 @@ public class MediaUtil {
         }
     }
 
-    private static <T> T grab(InputStream inputStream, FFmpegGrabFunction<T> metaInfoFetcher) {
+    /**
+     * 处理多媒体文件，在这个方法中会开启FFmpegFrameGrabber和关闭FFmpegFrameGrabber
+     * @param inputStream 媒体文件输入流
+     * @param grabFunction 处理方法
+     */
+    private static <T> T grab(InputStream inputStream, FFmpegGrabFunction<T> grabFunction) {
         FFmpegFrameGrabber grabber = null;
         try {
             grabber = new FFmpegFrameGrabber(inputStream);
             grabber.start();
-            return metaInfoFetcher.grab(grabber);
-        } catch (FFmpegFrameGrabber.Exception e) {
+            return grabFunction.grab(grabber);
+        } catch (Exception e) {
             return LambdaUtil.raise(e);
         } finally {
             if (grabber != null) {
@@ -76,6 +105,10 @@ public class MediaUtil {
         }
     }
 
+    /**
+     * 获取视频信息
+     * @param grabber FFmpegFrameGrabber
+     */
     private static VideoMetaInfo getVideoMetaInfo(FFmpegFrameGrabber grabber) {
         VideoMetaInfo videoMetaInfo = new VideoMetaInfo();
         // 时长
@@ -126,6 +159,10 @@ public class MediaUtil {
         return videoMetaInfo;
     }
 
+    /**
+     * 获取音频信息
+     * @param grabber FFmpegFrameGrabber
+     */
     private static AudioMetaInfo getAudioMetaInfo(FFmpegFrameGrabber grabber) {
         AudioMetaInfo audioMetaInfo = new AudioMetaInfo();
         audioMetaInfo.setBitRate(grabber.getAudioBitrate());
@@ -134,42 +171,97 @@ public class MediaUtil {
         audioMetaInfo.setChannels(grabber.getAudioChannels());
         audioMetaInfo.setMetadata(grabber.getAudioMetadata());
         audioMetaInfo.setSize(audioMetaInfo.getBitRate() * audioMetaInfo.getDuration() / 1000000 / 8);
+        audioMetaInfo.setFormat(grabber.getFormat());
         try (BytePointer name = avcodec.avcodec_find_decoder(grabber.getAudioCodec()).name()) {
             audioMetaInfo.setCodec(name.getString());
         }
         return audioMetaInfo;
     }
 
+    /**
+     * 截取视频中的指定帧
+     * @param videoFilePath 视频文件路径
+     * @param select 第几帧
+     * @return 图片
+     */
+    public static BufferedImage getScreenshotInFrame(String videoFilePath, int select) {
+        return getScreenshotInFrame(videoFilePath, select, true);
+    }
+
+    public static BufferedImage getScreenshotInFrame(String videoFilePath, int select, boolean checkOver) {
+        return grab(videoFilePath, grabber -> getScreenshot(grabber, select, true, checkOver));
+    }
+
+    public static BufferedImage getScreenshotInFrame(InputStream inputStream, int select) {
+        return getScreenshotInFrame(inputStream, select, true);
+    }
+
+    public static BufferedImage getScreenshotInFrame(InputStream inputStream, int select, boolean checkOver) {
+        return grab(inputStream, grabber -> getScreenshot(grabber, select, true, true));
+    }
+
+    /**
+     * 截取视频中的指定时间的一帧
+     * @param videoFilePath 视频文件路径
+     * @param select 第几秒
+     * @return 图片
+     */
+    public static BufferedImage getScreenshotInSecond(String videoFilePath, int select) {
+        return getScreenshotInSecond(videoFilePath, select, true);
+    }
+
+    public static BufferedImage getScreenshotInSecond(String videoFilePath, int select, boolean checkOver) {
+        return grab(videoFilePath, grabber -> getScreenshot(grabber, select, false, checkOver));
+    }
+
+
+    public static BufferedImage getScreenshotInSecond(InputStream inputStream, int select) {
+        return getScreenshotInSecond(inputStream, select, true);
+    }
+
+    public static BufferedImage getScreenshotInSecond(InputStream inputStream, int select, boolean checkOver) {
+        return grab(inputStream, grabber -> getScreenshot(grabber, select, true, checkOver));
+    }
+
+    /**
+     * 获取视频封面
+     * @param videoFilePath
+     * @return
+     */
+    public static BufferedImage getVideoPoster(String videoFilePath) {
+        return getScreenshotInSecond(videoFilePath, 10, false);
+    }
+
+    public static BufferedImage getVideoPoster(InputStream inputStream) {
+        return getScreenshotInSecond(inputStream, 10, false);
+    }
 
 
     /**
      * 截取视频中的一帧
-     * @param videoFilePath 视频文件路径
-     * @param n 第几帧
-     * @return 图片
+     * @param grabber FFmpegFrameGrabber
+     * @param select 截取位置
+     * @param isFrame 截取位置是指指定帧还是指定秒
+     * @param checkOver 是否检验截取位置超过视频最大位置，如果检测则在超过时返回null，如果不检测则返回最大位置的一帧
+     * @return BufferedImage
      */
-    public static BufferedImage getScreenshot(String videoFilePath, int n) {
-        return grab(videoFilePath, grabber -> getScreenshot(grabber, n, true));
-    }
-
-    public static BufferedImage getScreenshot(InputStream inputStream, int n) {
-        return grab(inputStream, grabber -> getScreenshot(grabber, n, true));
-    }
-
-
-    private static BufferedImage getScreenshot(FFmpegFrameGrabber grabber, int n, boolean isFrame) throws FFmpegFrameGrabber.Exception {
-        if (n < 0) {
+    private static BufferedImage getScreenshot(FFmpegFrameGrabber grabber, int select, boolean isFrame, boolean checkOver) throws FFmpegFrameGrabber.Exception {
+        if (select < 0) {
             return null;
         }
         // 视频总帧数
         int frames = grabber.getLengthInAudioFrames();
-        int targetFrame = n;
+        int targetFrame = select;
         // 在指定的秒数
         if (!isFrame) {
             double videoFrameRate = grabber.getVideoFrameRate();
-            targetFrame = (int) (videoFrameRate * n);
+            targetFrame = (int) (videoFrameRate * select);
         }
-        Frame frame;
+        if (checkOver && targetFrame > frames) {
+            return null;
+        }
+
+        Frame frame = null;
         for (int i = 0, count = 0; i < frames; i++) {
             // 获取视频帧
             frame = grabber.grabImage();
@@ -178,133 +270,82 @@ public class MediaUtil {
             }
             count++;
             if (count == targetFrame) {
-                Java2DFrameConverter converter = new Java2DFrameConverter();
-                BufferedImage bi = converter.getBufferedImage(frame);
-                return bi;
+                break;
             }
+        }
+
+        if (frame != null && frame.image != null) {
+            Java2DFrameConverter converter = new Java2DFrameConverter();
+            BufferedImage bi = converter.getBufferedImage(frame);
+            return bi;
         }
         return null;
     }
 
 
-    public static void getAudioFromVideo() {
-        // todo 从视频中抽取出音频
+    /**
+     * 从视频中抽取出音频
+     * @param videoFilePath 视频文件路径
+     * @param targetFilePath 音频文件保存路径
+     */
+    public static void getAudioFromVideo(String videoFilePath, String targetFilePath) {
+        grab(videoFilePath, grabber -> {
+            FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(targetFilePath, grabber.getAudioChannels());
+            getAudioFromVideo(grabber, recorder);
+            return null;
+        });
+    }
+
+    public static void getAudioFromVideo(String videoFilePath, OutputStream outputStream) {
+        grab(videoFilePath, grabber -> {
+            FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputStream, grabber.getAudioChannels());
+            getAudioFromVideo(grabber, recorder);
+            return null;
+        });
+    }
+
+    public static void getAudioFromVideo(InputStream videoInputStream, String targetFilePath) {
+        grab(videoInputStream, grabber -> {
+            FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(targetFilePath, grabber.getAudioChannels());
+            getAudioFromVideo(grabber, recorder);
+            return null;
+        });
+    }
+
+    public static void getAudioFromVideo(InputStream videoInputStream, OutputStream outputStream) {
+        grab(videoInputStream, grabber -> {
+            FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputStream, grabber.getAudioChannels());
+            getAudioFromVideo(grabber, recorder);
+            return null;
+        });
+    }
+
+    private static void getAudioFromVideo(FFmpegFrameGrabber grabber, FFmpegFrameRecorder recorder) throws FFmpegFrameRecorder.Exception, FFmpegFrameGrabber.Exception {
+        recorder.setFormat("mp3");
+        recorder.setSampleRate(grabber.getSampleRate());
+        recorder.setTimestamp(grabber.getTimestamp());
+        recorder.setAudioQuality(0);
+        recorder.start();
+        Frame frame;
+
+        while (true){
+            frame = grabber.grab();
+            if (frame == null) {
+                break;
+            }
+            if (frame.samples != null) {
+                recorder.recordSamples(frame.sampleRate, frame.audioChannels, frame.samples);
+            }
+        }
+        recorder.stop();
+        recorder.release();
+        try {
+            recorder.close();
+        } catch (FrameRecorder.Exception e) {
+        }
     }
 
     // todo 压缩视频
 
 
-
-
-//    /**
-//     * @Description: 获取视频截图
-//     * @throws IOException  void
-//     */
-//    public static Map<String, Object> getScreenshot(String filePath) throws Exception{
-//
-//        System.out.println("截取视频截图开始："+ System.currentTimeMillis());
-//        Map<String, Object> result = new HashMap<String, Object>();
-//        FFmpegFrameGrabber grabber = FFmpegFrameGrabber.createDefault(filePath);
-//
-//        // 第一帧图片存储位置
-//        String targerFilePath = filePath.substring(0, filePath.lastIndexOf("\\"));
-//        // 视频文件名
-//        String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1);
-//        // 图片名称
-//        String targetFileName = fileName.substring(0, fileName.lastIndexOf("."));
-//        System.out.println("视频路径是：" + targerFilePath);
-//        System.out.println("视频文件名：" + fileName);
-//        System.out.println("图片名称是：" + targetFileName);
-//
-//        grabber.start();
-//        //设置视频截取帧（默认取第一帧）
-//        Frame frame = grabber.grabImage();
-//        //视频旋转度
-//        String rotate = grabber.getVideoMetadata("rotate");
-//        Java2DFrameConverter converter = new Java2DFrameConverter();
-//        //绘制图片
-//        BufferedImage bi = converter.getBufferedImage(frame);
-//        if (rotate != null) {
-//            // 旋转图片
-//            bi = rotate(bi, Integer.parseInt(rotate));
-//        }
-//        //图片的类型
-//        String imageMat = "jpg";
-//        //图片的完整路径
-//        String imagePath = targerFilePath + File.separator + targetFileName + "." + imageMat;
-//        //创建文件
-//        File output = new File(imagePath);
-//        ImageIO.write(bi, imageMat, output);
-//
-//        //拼接Map信息
-//        result.put("videoWide", bi.getWidth());
-//        result.put("videoHigh", bi.getHeight());
-//        long duration = grabber.getLengthInTime() / (1000 * 1000);
-//        result.put("rotate", StrUtil.isBlank(rotate)? "0" : rotate);
-//        result.put("format", grabber.getFormat());
-//        result.put("imgPath", output.getPath());
-//        System.out.println("视频的宽:" + bi.getWidth());
-//        System.out.println("视频的高:" + bi.getHeight());
-//        System.out.println("视频的旋转度：" + rotate);
-//        System.out.println("视频的格式：" + grabber.getFormat());
-//        System.out.println("此视频时长（s/秒）：" + duration);
-//        grabber.stop();
-//        System.out.println("截取视频截图结束："+ System.currentTimeMillis());
-//        return result;
-//    }
-
-
-
-
-
-
-
-//
-//    /**
-//     * @Description: 根据视频旋转度来调整图片
-//     * @param src
-//     * @param angel	视频旋转度
-//     * @return  BufferedImage
-//     */
-//    public static BufferedImage rotate(BufferedImage src, int angel) {
-//        int src_width = src.getWidth(null);
-//        int src_height = src.getHeight(null);
-//        int type = src.getColorModel().getTransparency();
-//        Rectangle rect_des = calcRotatedSize(new Rectangle(new Dimension(src_width, src_height)), angel);
-//        BufferedImage bi = new BufferedImage(rect_des.width, rect_des.height, type);
-//        Graphics2D g2 = bi.createGraphics();
-//        g2.translate((rect_des.width - src_width) / 2, (rect_des.height - src_height) / 2);
-//        g2.rotate(Math.toRadians(angel), src_width / 2, src_height / 2);
-//        g2.drawImage(src, 0, 0, null);
-//        g2.dispose();
-//        return bi;
-//    }
-//
-//
-//    /**
-//     * @Description: 计算图片旋转大小
-//     * @param src
-//     * @param angel
-//     * @return  Rectangle
-//     */
-//    public static Rectangle calcRotatedSize(Rectangle src, int angel) {
-//        if (angel >= 90) {
-//            if (angel / 90 % 2 == 1) {
-//                int temp = src.height;
-//                src.height = src.width;
-//                src.width = temp;
-//            }
-//            angel = angel % 90;
-//        }
-//        double r = Math.sqrt(src.height * src.height + src.width * src.width) / 2;
-//        double len = 2 * Math.sin(Math.toRadians(angel) / 2) * r;
-//        double angel_alpha = (Math.PI - Math.toRadians(angel)) / 2;
-//        double angel_dalta_width = Math.atan((double) src.height / src.width);
-//        double angel_dalta_height = Math.atan((double) src.width / src.height);
-//        int len_dalta_width = (int) (len * Math.cos(Math.PI - angel_alpha - angel_dalta_width));
-//        int len_dalta_height = (int) (len * Math.cos(Math.PI - angel_alpha - angel_dalta_height));
-//        int des_width = src.width + len_dalta_width * 2;
-//        int des_height = src.height + len_dalta_height * 2;
-//        return new java.awt.Rectangle(new Dimension(des_width, des_height));
-//    }
 }
