@@ -398,7 +398,7 @@ public class MediaUtil {
     }
 
     public static void compressVideo(InputStream inputStream, OutputStream outputStream) {
-        compressVideo(inputStream, outputStream, -1, -1, 15, 2400000);
+        compressVideo(inputStream, outputStream, -1, -1, 15, 300000);
     }
 
     public static void compressVideo(InputStream inputStream, OutputStream outputStream, int width, int height, int frameRate, int videoBitrate) {
@@ -409,7 +409,7 @@ public class MediaUtil {
     }
 
     public static void compressVideo(String videoFilePath, OutputStream outputStream) {
-        compressVideo(videoFilePath, outputStream, -1, -1, 15, 2400000);
+        compressVideo(videoFilePath, outputStream, -1, -1, 15, 300000);
     }
 
     public static void compressVideo(String videoFilePath, OutputStream outputStream, int width, int height, int frameRate, int videoBitrate) {
@@ -420,7 +420,7 @@ public class MediaUtil {
     }
 
     public static void compressVideo(InputStream inputStream, String targetFilePath) {
-        compressVideo(inputStream, targetFilePath, -1, -1, 20, 2400000);
+        compressVideo(inputStream, targetFilePath, -1, -1, 20, 300000);
     }
 
     public static void compressVideo(InputStream inputStream, String targetFilePath, int width, int height, int frameRate, int videoBitrate) {

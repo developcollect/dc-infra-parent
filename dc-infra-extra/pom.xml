@@ -14,6 +14,8 @@
     <description>dc 扩展工具包</description>
 
     <properties>
+        <javacv.version>1.5.5</javacv.version>
+        <javacv.ffmpeg.version>4.3.2-1.5.5</javacv.ffmpeg.version>
     </properties>
 
     <dependencies>
@@ -23,12 +25,46 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- 这个依赖会把javacv所有平台所有封装的依赖都导入 -->
+<!--        <dependency>-->
+<!--            <groupId>org.bytedeco</groupId>-->
+<!--            <artifactId>javacv-platform</artifactId>-->
+<!--            <version>${javacv.version}</version>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.bytedeco</groupId>
-            <artifactId>javacv-platform</artifactId>
-            <version>1.5.5</version>
+            <artifactId>javacv</artifactId>
+            <version>${javacv.version}</version>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>ffmpeg</artifactId>
+            <version>${javacv.ffmpeg.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>ffmpeg</artifactId>
+            <version>${javacv.ffmpeg.version}</version>
+            <classifier>windows-x86_64</classifier>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacpp</artifactId>
+            <version>${javacv.version}</version>
+            <classifier>windows-x86_64</classifier>
+            <optional>true</optional>
+        </dependency>
+
 
         <dependency>
             <groupId>com.developcollect</groupId>
