@@ -5,7 +5,6 @@ import com.developcollect.core.utils.FileUtil;
 import com.developcollect.extra.javacv.meta.AudioMetaInfo;
 import com.developcollect.extra.javacv.meta.VideoMetaInfo;
 import org.junit.Test;
-import sun.plugin2.util.SystemUtil;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
