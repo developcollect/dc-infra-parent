@@ -59,26 +59,24 @@ public class WebDriverUtil {
      * @author zak
      * @date 2020/5/27 15:04
      */
-    private static <X> X screenshot(final String url, final By by, OutputType<X> target, final Consumer<WebDriver> consumer) {
-        synchronized (WebDriverUtil.class) {
-            WebDriver driver = get(url);
-            // 切换到新的标签
-            final LinkedHashSet<String> windowHandles = (LinkedHashSet) driver.getWindowHandles();
-            driver.switchTo().window(windowHandles.toArray(new String[windowHandles.size()])[1]);
+    public static synchronized <X> X screenshot(final String url, final By by, OutputType<X> target, final Consumer<WebDriver> consumer) {
+        WebDriver driver = get(url);
+        // 切换到新的标签
+        final LinkedHashSet<String> windowHandles = (LinkedHashSet) driver.getWindowHandles();
+        driver.switchTo().window(windowHandles.toArray(new String[windowHandles.size()])[1]);
 
-            // 调用自定义处理
-            consumer.accept(driver);
+        // 调用自定义处理
+        consumer.accept(driver);
 
-            // 截图
-            final TakesScreenshot ts = by == null ? (TakesScreenshot) driver : driver.findElement(by);
-            final X x = takeScreenshot(ts, target);
+        // 截图
+        final TakesScreenshot ts = by == null ? (TakesScreenshot) driver : driver.findElement(by);
+        final X x = takeScreenshot(ts, target);
 
-            // 关闭当前标签
-            driver.close();
-            // 切换回原始的标签
-            driver.switchTo().window(ORIGIN_WINDOW_HANDLE);
-            return x;
-        }
+        // 关闭当前标签
+        driver.close();
+        // 切换回原始的标签
+        driver.switchTo().window(ORIGIN_WINDOW_HANDLE);
+        return x;
     }
 
     /**
@@ -91,7 +89,7 @@ public class WebDriverUtil {
      * @author zak
      * @date 2020/5/27 15:06
      */
-    private static <X> X screenshot(final String url, final OutputType<X> target, final Consumer<WebDriver> consumer) {
+    public static <X> X screenshot(final String url, final OutputType<X> target, final Consumer<WebDriver> consumer) {
         return screenshot(url, null, target, consumer);
     }
 
