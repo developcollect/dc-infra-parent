@@ -1,17 +1,16 @@
 package com.developcollect.extra.webdriver;
 
-import cn.hutool.core.io.FileUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.io.ByteArrayInputStream;
 import java.util.LinkedHashSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
 /**
+ * ChromeDriver下载 https://sites.google.com/chromium.org/driver/
  * @author zak
  * @since 1.0.0
  */
@@ -137,13 +136,11 @@ public class WebDriverUtil {
     }
 
 
-    private static <X> X takeScreenshot(final TakesScreenshot takesScreenshot, final OutputType<X> target) {
-        final OutputType ot = target == OutputType.FILE ? OutputType.BYTES : target;
-        final Object obj = takesScreenshot.getScreenshotAs(ot);
-
-        return target == OutputType.FILE
-                ? (X) FileUtil.writeFromStream(new ByteArrayInputStream((byte[]) obj), FileUtil.createTempFile("webdriver", ".jpg", FileUtil.getTmpDir(), true))
-                : (X) obj;
+    private static <X> X takeScreenshot(final TakesScreenshot takesScreenshot, OutputType<X> target) {
+        if (target == OutputType.FILE) {
+            target = (OutputType<X>) new FileOutputType();
+        }
+        return takesScreenshot.getScreenshotAs(target);
     }
 
     private static WebDriver get(String url) {
@@ -171,7 +168,7 @@ public class WebDriverUtil {
         //声明一个js执行器
         JavascriptExecutor js = (JavascriptExecutor) driver;
         long scrollHeight = (long) js.executeScript("return document.body.parentNode.scrollHeight");
-        driver.manage().window().setSize(new Dimension(1920, (int) scrollHeight));
+        driver.manage().window().setSize(new Dimension(1920, Math.max((int) scrollHeight, 1080)));
     }
 
     private static void screen1920x1080(WebDriver driver) {
