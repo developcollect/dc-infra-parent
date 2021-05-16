@@ -5,6 +5,8 @@ import cn.hutool.core.lang.Filter;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.developcollect.core.geo.Location;
+import com.developcollect.core.geo.Point;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
@@ -176,7 +178,7 @@ public class NetUtil extends cn.hutool.core.net.NetUtil {
      * @author Zhu Kaixiao
      * @date 2020/4/30 10:23
      */
-    public static String getIpLocation(String ip) {
+    public static Location getIpLocation(String ip) {
         try {
             String body = HttpRequest
                     .get(String.format("https://apis.map.qq.com/ws/location/v1/ip?ip=%s&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77", ip))
@@ -185,23 +187,30 @@ public class NetUtil extends cn.hutool.core.net.NetUtil {
                     .body();
             final JSONObject jo = JSONObject.parseObject(body);
             if (jo.getIntValue("status") == 0) {
+                Location location = new Location();
                 final JSONObject result = jo.getJSONObject("result");
                 final JSONObject adInfo = result.getJSONObject("ad_info");
-                final String location = Arrays.asList(
-                        adInfo.getString("nation"),
-                        adInfo.getString("province"),
-                        adInfo.getString("city"),
-                        adInfo.getString("district")
-                ).stream()
-                        .distinct()
-                        .filter(StrUtil::isNotBlank)
-                        .filter(s -> !"中国".equals(s))
-                        .collect(Collectors.joining());
+                final JSONObject pointInfo = result.getJSONObject("location");
+                location.setNation(adInfo.getString("nation"));
+                location.setProvince(adInfo.getString("province"));
+                location.setCity(adInfo.getString("city"));
+                location.setDistrict(adInfo.getString("district"));
+                location.setAdcode(adInfo.getInteger("adcode"));
+                if (pointInfo != null) {
+                    Point point = new Point();
+                    location.setPoint(point);
+                    point.setLat(pointInfo.getDouble("lat"));
+                    point.setLng(pointInfo.getDouble("lng"));
+                }
+
                 return location;
+            } else {
+                log.error("调用IP定位接口失败, IP:[{}], Response:[{}]", ip, body);
             }
         } catch (Exception e) {
+            log.error("获取IP定位失败, IP:[{}]", ip, e);
         }
-        return "";
+        return null;
     }
 
     /**
