@@ -1,17 +1,16 @@
 package com.developcollect.extra.webdriver;
 
-import cn.hutool.core.io.FileUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
-import java.io.ByteArrayInputStream;
 import java.util.LinkedHashSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
 /**
+ * ChromeDriver下载 https://sites.google.com/chromium.org/driver/
  * @author zak
  * @since 1.0.0
  */
@@ -60,26 +59,24 @@ public class WebDriverUtil {
      * @author zak
      * @date 2020/5/27 15:04
      */
-    private static <X> X screenshot(final String url, final By by, OutputType<X> target, final Consumer<WebDriver> consumer) {
-        synchronized (WebDriverUtil.class) {
-            WebDriver driver = get(url);
-            // 切换到新的标签
-            final LinkedHashSet<String> windowHandles = (LinkedHashSet) driver.getWindowHandles();
-            driver.switchTo().window(windowHandles.toArray(new String[windowHandles.size()])[1]);
+    public static synchronized <X> X screenshot(final String url, final By by, OutputType<X> target, final Consumer<WebDriver> consumer) {
+        WebDriver driver = get(url);
+        // 切换到新的标签
+        final LinkedHashSet<String> windowHandles = (LinkedHashSet) driver.getWindowHandles();
+        driver.switchTo().window(windowHandles.toArray(new String[windowHandles.size()])[1]);
 
-            // 调用自定义处理
-            consumer.accept(driver);
+        // 调用自定义处理
+        consumer.accept(driver);
 
-            // 截图
-            final TakesScreenshot ts = by == null ? (TakesScreenshot) driver : driver.findElement(by);
-            final X x = takeScreenshot(ts, target);
+        // 截图
+        final TakesScreenshot ts = by == null ? (TakesScreenshot) driver : driver.findElement(by);
+        final X x = takeScreenshot(ts, target);
 
-            // 关闭当前标签
-            driver.close();
-            // 切换回原始的标签
-            driver.switchTo().window(ORIGIN_WINDOW_HANDLE);
-            return x;
-        }
+        // 关闭当前标签
+        driver.close();
+        // 切换回原始的标签
+        driver.switchTo().window(ORIGIN_WINDOW_HANDLE);
+        return x;
     }
 
     /**
@@ -92,7 +89,7 @@ public class WebDriverUtil {
      * @author zak
      * @date 2020/5/27 15:06
      */
-    private static <X> X screenshot(final String url, final OutputType<X> target, final Consumer<WebDriver> consumer) {
+    public static <X> X screenshot(final String url, final OutputType<X> target, final Consumer<WebDriver> consumer) {
         return screenshot(url, null, target, consumer);
     }
 
@@ -137,13 +134,11 @@ public class WebDriverUtil {
     }
 
 
-    private static <X> X takeScreenshot(final TakesScreenshot takesScreenshot, final OutputType<X> target) {
-        final OutputType ot = target == OutputType.FILE ? OutputType.BYTES : target;
-        final Object obj = takesScreenshot.getScreenshotAs(ot);
-
-        return target == OutputType.FILE
-                ? (X) FileUtil.writeFromStream(new ByteArrayInputStream((byte[]) obj), FileUtil.createTempFile("webdriver", ".jpg", FileUtil.getTmpDir(), true))
-                : (X) obj;
+    private static <X> X takeScreenshot(final TakesScreenshot takesScreenshot, OutputType<X> target) {
+        if (target == OutputType.FILE) {
+            target = (OutputType<X>) new FileOutputType();
+        }
+        return takesScreenshot.getScreenshotAs(target);
     }
 
     private static WebDriver get(String url) {
@@ -171,7 +166,7 @@ public class WebDriverUtil {
         //声明一个js执行器
         JavascriptExecutor js = (JavascriptExecutor) driver;
         long scrollHeight = (long) js.executeScript("return document.body.parentNode.scrollHeight");
-        driver.manage().window().setSize(new Dimension(1920, (int) scrollHeight));
+        driver.manage().window().setSize(new Dimension(1920, Math.max((int) scrollHeight, 1080)));
     }
 
     private static void screen1920x1080(WebDriver driver) {
