@@ -136,10 +136,8 @@ public class WebUtil {
     /**
      * 获取当前访问的接口
      *
-     * @param
      * @return java.lang.String
      * @author Zhu Kaixiao
-     * @date 2019/11/26 15:16
      */
     public static String getServletPath() {
         return getServletPath(getRequest());
@@ -217,7 +215,6 @@ public class WebUtil {
      *
      * @return java.lang.String
      * @author Zhu Kaixiao
-     * @date 2020/6/17 15:22
      */
     public static String getMappingPath(HttpServletRequest request) {
         String attribute = getAttribute(request, CURR_MAPPING_PATH_ATTRIBUTE_NAME);
@@ -254,7 +251,6 @@ public class WebUtil {
      * @param handlerMappings
      * @return java.lang.String
      * @author Zhu Kaixiao
-     * @date 2020/6/17 14:16
      */
     private static String fetchMappingPattern(List<HandlerMapping> handlerMappings, HttpServletRequest request) {
         if (handlerMappings == null) {
@@ -271,9 +267,8 @@ public class WebUtil {
                     if (mappingInfos == null) {
                         Map<RequestMappingInfo, HandlerMethod> mappings = ReflectUtil.invoke(mappingRegistry, "getMappings");
                         Set<RequestMappingInfo> requestMappingInfos = mappings.keySet();
-                        Iterator<RequestMappingInfo> iterator = requestMappingInfos.iterator();
-                        while (iterator.hasNext()) {
-                            RequestMappingInfo mappingInfo = iterator.next().getMatchingCondition(request);
+                        for (RequestMappingInfo requestMappingInfo : requestMappingInfos) {
+                            RequestMappingInfo mappingInfo = requestMappingInfo.getMatchingCondition(request);
                             String pattern = fetchPatternFromRequestMappingInfo(mappingInfo);
                             if (pattern != null) {
                                 return pattern;
@@ -333,7 +328,6 @@ public class WebUtil {
      *
      * @return java.lang.String
      * @author Zhu Kaixiao
-     * @date 2020/6/17 15:24
      */
     public static String getRequestBody() {
         return getRequestBody(getRequest());
@@ -345,14 +339,13 @@ public class WebUtil {
      * @param request
      * @return java.lang.String
      * @author Zhu Kaixiao
-     * @date 2020/10/20 10:49
      */
     public static String getRequestBody(HttpServletRequest request) {
         String body = null;
         try {
             BufferedReader bufferedReader = request.getReader();
             body = IoUtil.read(bufferedReader);
-        } catch (Exception e) {
+        } catch (Exception ignore) {
         }
         return body;
     }
@@ -364,7 +357,6 @@ public class WebUtil {
      * 仅用于开发时测试
      *
      * @author Zhu Kaixiao
-     * @date 2020/10/20 10:43
      */
     public static void print(HttpServletRequest request) {
         try {
