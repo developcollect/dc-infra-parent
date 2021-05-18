@@ -161,7 +161,11 @@ public class WebUtil {
      * @param obj  obj
      */
     public static void setAttribute(String name, Object obj) {
-        getRequest().setAttribute(name, obj);
+        setAttribute(getRequest(), name, obj);
+    }
+
+    public static void setAttribute(HttpServletRequest request, String name, Object obj) {
+        request.setAttribute(name, obj);
     }
 
 
@@ -216,7 +220,7 @@ public class WebUtil {
      * @date 2020/6/17 15:22
      */
     public static String getMappingPath(HttpServletRequest request) {
-        String attribute = (String) request.getAttribute(CURR_MAPPING_PATH_ATTRIBUTE_NAME);
+        String attribute = getAttribute(request, CURR_MAPPING_PATH_ATTRIBUTE_NAME);
         if (StrUtil.isBlank(attribute)) {
             String mappingPattern = null;
             Map<String, DispatcherServlet> dispatcherServletMap = SpringUtil.getBeansOfType(DispatcherServlet.class);
@@ -233,7 +237,7 @@ public class WebUtil {
             // 去除path参数中的正则表达式
             // 例子：/xxx/ddd/{id:\\d+}/{name:\\w+}  ==> /xxx/ddd/{id}/{name}
             mappingPattern = mappingPattern.replaceAll("(?<=\\{)(.*?):.*?(?=})", "$1");
-            request.setAttribute(CURR_MAPPING_PATH_ATTRIBUTE_NAME, mappingPattern);
+            setAttribute(request, CURR_MAPPING_PATH_ATTRIBUTE_NAME, mappingPattern);
             attribute = mappingPattern;
         }
         return attribute;
