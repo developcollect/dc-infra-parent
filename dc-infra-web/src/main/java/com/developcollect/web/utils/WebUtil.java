@@ -257,6 +257,9 @@ public class WebUtil {
      * @date 2020/6/17 14:16
      */
     private static String fetchMappingPattern(List<HandlerMapping> handlerMappings, HttpServletRequest request) {
+        if (handlerMappings == null) {
+            return null;
+        }
         for (HandlerMapping handlerMapping : handlerMappings) {
             try {
                 if (handlerMapping instanceof AbstractHandlerMethodMapping) {
