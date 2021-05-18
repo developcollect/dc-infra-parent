@@ -82,7 +82,7 @@
             <url>https://maven.aliyun.com/repository/public</url>
         </repository>
         <repository>
-            <id>ali-spring</id>
+            <id>spring</id>
             <url>https://maven.aliyun.com/repository/spring</url>
         </repository>
     </repositories>
