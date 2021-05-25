@@ -60,7 +60,7 @@ public class IdUtil extends cn.hutool.core.util.IdUtil {
      * @return id
      */
     public static String getIdStr() {
-        return Long.toBinaryString(getId());
+        return Long.toString(getId());
     }
 
 
