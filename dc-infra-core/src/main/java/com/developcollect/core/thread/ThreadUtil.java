@@ -24,4 +24,34 @@ public class ThreadUtil extends cn.hutool.core.thread.ThreadUtil {
     public static <T> void waitForDone(Future<T> future) {
         waitForDone(future, 0);
     }
+
+    public static void wait(Object obj) {
+        synchronized (obj) {
+            try {
+                obj.wait();
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
+
+    public static void wait(Object obj, long timeout) {
+        synchronized (obj) {
+            try {
+                obj.wait(timeout);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
+
+    public static void wait(Object obj, long timeout, int nanos) {
+        synchronized (obj) {
+            try {
+                obj.wait(timeout, nanos);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
 }
