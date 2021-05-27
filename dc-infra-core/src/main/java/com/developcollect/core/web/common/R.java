@@ -1,12 +1,11 @@
-package com.developcollect.web;
+package com.developcollect.core.web.common;
+
 
 /**
- * @author Zhu KaiXiao
- * @version 1.0
- * @date 2021/4/22 13:18
+ * 提供返回值的封装
+ * @param <T>
  */
-public class HttpResult<T> {
-
+public class R<T> {
     /**
      * 通用成功代码
      */
@@ -26,7 +25,6 @@ public class HttpResult<T> {
      * 状态代码
      * <p>
      * 成功： 200
-     * 错误： 见异常代码值 {@link IExceptionInfo}
      */
     private int code;
 
@@ -40,10 +38,10 @@ public class HttpResult<T> {
      */
     private T data;
 
-    public HttpResult() {
+    public R() {
     }
 
-    public HttpResult(int code, String message, T data) {
+    public R(int code, String message, T data) {
         this.code = code;
         this.message = message;
         this.data = data;
@@ -59,7 +57,7 @@ public class HttpResult<T> {
      * @author Zhu Kaixiao
      * @date 2020/9/26 11:17
      */
-    public static <E> HttpResult<E> ok(int code, String message) {
+    public static <E> R<E> ok(int code, String message) {
         return build(code, message);
     }
 
@@ -73,7 +71,7 @@ public class HttpResult<T> {
      * @author Zhu Kaixiao
      * @date 2020/9/26 11:17
      */
-    public static <E> HttpResult<E> ok(String message, E data) {
+    public static <E> R<E> ok(String message, E data) {
         return build(COMMON_SUCCESS_CODE, message, data);
     }
 
@@ -86,7 +84,7 @@ public class HttpResult<T> {
      * @author Zhu Kaixiao
      * @date 2020/9/26 11:17
      */
-    public static <E> HttpResult<E> ok(E data) {
+    public static <E> R<E> ok(E data) {
         return ok("成功", data);
     }
 
@@ -99,12 +97,12 @@ public class HttpResult<T> {
      * @author Zhu Kaixiao
      * @date 2020/9/26 11:17
      */
-    public static <E> HttpResult<E> ok() {
+    public static <E> R<E> ok() {
         return ok(null);
     }
 
 
-    public static <E> HttpResult<E> fail(int code, String message) {
+    public static <E> R<E> fail(int code, String message) {
         return build(code, message);
     }
 
@@ -114,25 +112,25 @@ public class HttpResult<T> {
      * @param <E>
      * @return
      */
-    public static <E> HttpResult<E> failMsg(String message) {
-        return new HttpResult<>(COMMON_SERVER_FAIL_CODE, message, null);
+    public static <E> R<E> failMsg(String message) {
+        return new R<>(COMMON_SERVER_FAIL_CODE, message, null);
     }
 
-    public static <E> HttpResult<E> fail(E data) {
+    public static <E> R<E> fail(E data) {
         return build(COMMON_SERVER_FAIL_CODE, "", data);
     }
 
-    public static <E> HttpResult<E> fail() {
+    public static <E> R<E> fail() {
         return fail(null);
     }
 
 
-    public static <E> HttpResult<E> build(int code, String message) {
-        return new HttpResult<>(code, message, null);
+    public static <E> R<E> build(int code, String message) {
+        return new R<>(code, message, null);
     }
 
-    public static <E> HttpResult<E> build(int code, String message, E data) {
-        return new HttpResult<>(code, message, data);
+    public static <E> R<E> build(int code, String message, E data) {
+        return new R<>(code, message, data);
     }
 
 
@@ -165,26 +163,24 @@ public class HttpResult<T> {
         return this.data;
     }
 
-    public HttpResult<T> setCode(int code) {
+    public R<T> setCode(int code) {
         this.code = code;
         return this;
     }
 
-    public HttpResult<T> setMessage(String message) {
+    public R<T> setMessage(String message) {
         this.message = message;
         return this;
     }
 
-    public HttpResult<T> setData(T data) {
+    public R<T> setData(T data) {
         this.data = data;
         return this;
     }
 
     @Override
     public String toString() {
-        return "JcResult(code=" + this.getCode() + ", message=" + this.getMessage() + ", data=" + this.getData() + ")";
+        return "R(code=" + this.getCode() + ", message=" + this.getMessage() + ", data=" + this.getData() + ")";
     }
 
-
 }
-

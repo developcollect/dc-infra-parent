@@ -1,4 +1,4 @@
-package com.developcollect.web.lang;
+package com.developcollect.spring.lang;
 
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.Resource;

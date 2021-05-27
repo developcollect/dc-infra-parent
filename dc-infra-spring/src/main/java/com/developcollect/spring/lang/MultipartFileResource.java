@@ -1,4 +1,4 @@
-package com.developcollect.web.lang;
+package com.developcollect.spring.lang;
 
 
 import org.springframework.core.io.AbstractResource;
@@ -7,8 +7,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-
 
 
 

@@ -1,5 +1,6 @@
 package com.developcollect.spring;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,9 @@ import java.util.Map;
  * @version 1.0
  * @date 2019/10/21 10:51
  */
+@Slf4j
 @Component
 public class SpringUtil implements ApplicationContextAware, EnvironmentAware {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(SpringUtil.class);
     private static ApplicationContext applicationContext;
     private static String applicationName;
     private static volatile String appHome;
