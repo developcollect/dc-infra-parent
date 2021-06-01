@@ -18,7 +18,8 @@
 		<module>dc-infra-extra</module>
 		<module>dc-infra-authorization</module>
 		<module>dc-infra-spring</module>
-	</modules>
+        <module>dc-infra-ssm</module>
+    </modules>
 
 	<properties>
 		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
