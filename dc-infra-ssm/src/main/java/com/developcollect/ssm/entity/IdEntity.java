@@ -9,7 +9,7 @@ import java.io.Serializable;
 
 @Data
 @KeySequence(value = "SEQ_MYSQL_LONG_KEY")
-public abstract class IdEntity<ID extends Serializable> {
-    private ID id;
+public abstract class IdEntity<ID extends Serializable> implements IIdEntity<ID> {
+    protected ID id;
 }
 

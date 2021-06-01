@@ -16,14 +16,14 @@ import java.time.LocalDateTime;
 public abstract class CommonEntity<ID extends Serializable> extends IdEntity<ID> {
 
     @TableField(fill = FieldFill.INSERT)
-    private Long createUser;
+    protected Long createUser;
 
     @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    protected LocalDateTime createTime;
 
     @TableField(fill = FieldFill.UPDATE)
-    private Long updateUser;
+    protected Long updateUser;
 
     @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateTime;
+    protected LocalDateTime updateTime;
 }
