@@ -38,6 +38,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>com.developcollect</groupId>
+            <artifactId>dc-infra-web-common</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 
 
