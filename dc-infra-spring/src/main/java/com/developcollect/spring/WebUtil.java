@@ -439,6 +439,15 @@ public class WebUtil {
         return ServletUtil.getHeader(getRequest(), name, charsetName);
     }
 
+    public static String getReferer() {
+        return getReferer(getRequest());
+    }
+
+    public static String getReferer(HttpServletRequest request) {
+        return getHeader(request, "referer");
+    }
+
+
     /**
      * 客户浏览器是否为IE
      *
