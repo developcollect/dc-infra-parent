@@ -1,4 +1,4 @@
-package com.developcollect.ssm.entity;
+package com.developcollect.web.ssm.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;

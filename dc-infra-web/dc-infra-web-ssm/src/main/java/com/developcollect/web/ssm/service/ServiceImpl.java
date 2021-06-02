@@ -1,4 +1,4 @@
-package com.developcollect.ssm.service;
+package com.developcollect.web.ssm.service;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 

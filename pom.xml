@@ -18,7 +18,7 @@
 		<module>dc-infra-extra</module>
 		<module>dc-infra-authorization</module>
 		<module>dc-infra-spring</module>
-        <module>dc-infra-ssm</module>
+        <module>dc-infra-web</module>
     </modules>
 
 	<properties>

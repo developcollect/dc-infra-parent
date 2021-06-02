@@ -1,4 +1,4 @@
-package com.developcollect.ssm.entity;
+package com.developcollect.web.ssm.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
