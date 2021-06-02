@@ -1,5 +1,6 @@
 package com.developcollect.web.ssm.entity;
 
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -17,6 +18,7 @@ public abstract class LogicallyDeletionEntity<ID extends Serializable> extends C
      * 1 已删除
      * 0 未删除
      */
+    @TableLogic
     private int deleteFlag;
 
     public boolean deleted() {
