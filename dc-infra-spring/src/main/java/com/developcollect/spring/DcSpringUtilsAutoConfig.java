@@ -1,5 +1,7 @@
 package com.developcollect.spring;
 
+import com.developcollect.spring.webmvc.DefaultGlobalExceptionHandler;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,13 @@ import org.springframework.web.client.RestTemplate;
 @Import({SpringUtil.class, WebUtil.class})
 @Configuration
 class DcSpringUtilsAutoConfig {
+
+
+    @Bean
+    @ConditionalOnMissingBean(name = "globalExceptionHandler")
+    public DefaultGlobalExceptionHandler globalExceptionHandler() {
+        return new DefaultGlobalExceptionHandler();
+    }
 
     /**
      * 配置一个能够通过服务名调用接口的 RestTemplate

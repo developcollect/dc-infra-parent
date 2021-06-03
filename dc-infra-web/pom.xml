@@ -16,6 +16,7 @@
   <modules>
     <module>dc-infra-web-ssm</module>
     <module>dc-infra-web-common</module>
+    <module>dc-infra-web-security</module>
   </modules>
 
 </project>
