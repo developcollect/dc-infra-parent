@@ -15,6 +15,14 @@ public class CacheUtil {
         cache.set(key, value);
     }
 
+    public static void set(String key, String value, long timeout, TimeUnit timeUnit) {
+        cache.set(key, value, timeout, timeUnit);
+    }
+
+    public static void  set(String key, String value, Duration duration) {
+        cache.set(key, value, duration);
+    }
+
 
     public static String get(String key) {
         return cache.get(key);

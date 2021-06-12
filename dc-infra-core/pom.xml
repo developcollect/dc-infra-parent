@@ -105,6 +105,15 @@
             <version>1.6.2</version>
             <optional>true</optional>
         </dependency>
+
+
+<!--        能解析java的泛型类型，包括lambda，但是还没测试-->
+<!--        <dependency>-->
+<!--            <groupId>net.jodah</groupId>-->
+<!--            <artifactId>typetools</artifactId>-->
+<!--            <version>0.6.3</version>-->
+<!--        </dependency>-->
+
     </dependencies>
 
 </project>
