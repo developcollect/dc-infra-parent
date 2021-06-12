@@ -19,7 +19,8 @@
 		<module>dc-infra-authorization</module>
 		<module>dc-infra-spring</module>
         <module>dc-infra-web</module>
-	</modules>
+        <module>dc-infra-cache</module>
+    </modules>
 
 	<properties>
 		<project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
