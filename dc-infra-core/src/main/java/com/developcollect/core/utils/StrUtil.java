@@ -33,4 +33,23 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
     }
 
 
+    /**
+     * 返回指定字符串的左边的指定长度的子串，如果长度超过原字符串长度，则返回原字符串
+     * @param cs 字符串
+     * @param len 长度
+     */
+    public static String left(CharSequence cs, int len) {
+        return cs.length() > len ? cs.subSequence(0, len).toString() : cs.toString();
+    }
+
+    /**
+     * 返回指定字符串的右边的指定长度的子串，如果长度超过原字符串长度，则返回原字符串
+     * @param cs 字符串
+     * @param len 长度
+     */
+    public static String right(CharSequence cs, int len) {
+        int length = cs.length();
+        return length > len ? cs.subSequence(length - len, length).toString() : cs.toString();
+    }
+
 }
