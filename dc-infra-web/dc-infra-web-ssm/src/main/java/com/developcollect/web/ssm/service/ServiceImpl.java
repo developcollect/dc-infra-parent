@@ -32,7 +32,7 @@ public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybati
 
     @Override
     public boolean exist(Serializable id) {
-        return exist(Wrappers.<T>query().eq("id", id));
+        return exist(Wrappers.<T>query().eq(getIdFieldName(), id));
     }
 
     @Override
@@ -47,23 +47,30 @@ public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybati
 
     @Override
     public <V> boolean checkAttrOwner(Serializable id, SFunction<T, V> fieldGetter, V val) {
-        T entity = getById(id);
-        return entity != null && Objects.equals(fieldGetter.apply(entity), val);
+        return exist(
+                Wrappers.<T>query()
+                        .eq(getIdFieldName(), id)
+                        .eq(LambdaUtil.getFieldName(fieldGetter), val)
+        );
     }
 
     @Override
     public <V> boolean checkAttrAvailable(Serializable id, SFunction<T, V> fieldGetter, V val) {
-        T entity = getByField(fieldGetter, val);
-        return entity == null || Objects.equals(getId(entity), id);
+        T one = getOne(Wrappers.<T>query().select(getIdFieldName()).eq(LambdaUtil.getFieldName(fieldGetter), val));
+        return one == null || Objects.equals(getId(one), id);
     }
 
 
     protected Serializable getId(T entity) {
+        Serializable idVal = (Serializable) ReflectionKit.getFieldValue(entity, getIdFieldName());
+        return idVal;
+    }
+
+    protected String getIdFieldName() {
         TableInfo tableInfo = TableInfoHelper.getTableInfo(this.entityClass);
         Assert.notNull(tableInfo, "error: can not execute. because can not find cache of TableInfo for entity!");
         String keyProperty = tableInfo.getKeyProperty();
         Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
-        Serializable idVal = (Serializable) ReflectionKit.getFieldValue(entity, tableInfo.getKeyProperty());
-        return idVal;
+        return keyProperty;
     }
 }
