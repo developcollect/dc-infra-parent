@@ -1,5 +1,6 @@
 package com.developcollect.core.utils;
 
+import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.RandomUtil;
 
 import java.util.*;
@@ -425,12 +426,6 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      */
     @Deprecated
     public static <E, R> List<R> convert(Collection<E> coll, Function<E, R> converter) {
-        if (coll == null) {
-            return null;
-        }
-        if (coll.isEmpty()) {
-            return Collections.emptyList();
-        }
         return coll.stream().map(converter).collect(Collectors.toList());
     }
 
@@ -439,13 +434,6 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      */
     @Deprecated
     public static <E, R> List<R> convert(Collection<E> coll, Function<E, R> converter, java.util.function.Consumer<R> consumer) {
-        if (coll == null) {
-            return null;
-        }
-        if (coll.isEmpty()) {
-            return Collections.emptyList();
-        }
-
         List<R> rList = coll.stream().map(ele -> {
             R r = converter.apply(ele);
             consumer.accept(r);
@@ -464,22 +452,10 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * @date 2020/8/24 10:22
      */
     public static <E, R> List<R> toList(Collection<E> coll, Function<? super E, ? extends R> mapper) {
-        if (coll == null) {
-            return null;
-        }
-        if (coll.isEmpty()) {
-            return Collections.emptyList();
-        }
         return coll.stream().map(mapper).collect(Collectors.toList());
     }
 
     public static <E, R> Set<R> toSet(Collection<E> coll, Function<? super E, ? extends R> mapper) {
-        if (coll == null) {
-            return null;
-        }
-        if (coll.isEmpty()) {
-            return Collections.emptySet();
-        }
         return coll.stream().map(mapper).collect(Collectors.toSet());
     }
 
