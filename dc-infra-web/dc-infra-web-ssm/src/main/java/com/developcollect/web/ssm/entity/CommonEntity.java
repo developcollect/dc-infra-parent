@@ -1,6 +1,7 @@
 package com.developcollect.web.ssm.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,10 +16,10 @@ import java.time.LocalDateTime;
 @ToString(callSuper = true)
 public abstract class CommonEntity<ID extends Serializable> extends IdEntity<ID> {
 
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(fill = FieldFill.INSERT, updateStrategy = FieldStrategy.NEVER)
     protected Long createUser;
 
-    @TableField(fill = FieldFill.INSERT)
+    @TableField(fill = FieldFill.INSERT, updateStrategy = FieldStrategy.NEVER)
     protected LocalDateTime createTime;
 
     @TableField(fill = FieldFill.UPDATE)

@@ -3,6 +3,7 @@ package com.developcollect.core.utils;
 
 import cn.hutool.core.collection.IterUtil;
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.RandomUtil;
 
 import java.util.Iterator;
 
@@ -52,4 +53,25 @@ public class StrUtil extends cn.hutool.core.util.StrUtil {
         return length > len ? cs.subSequence(length - len, length).toString() : cs.toString();
     }
 
+    /**
+     * 打乱一个字符串
+     */
+    public static String shuffle(CharSequence cs) {
+        char[] chars = cs.toString().toCharArray();
+        ArrayUtil.shuffle(chars);
+        return String.valueOf(chars);
+    }
+
+    /**
+     * 判断字符串是否全是数字
+     * 不含小数、正负号，只判断数字
+     */
+    public static boolean isDigits(CharSequence cs) {
+        for (int i = 0; i < cs.length(); i++) {
+            if (Character.isDigit(cs.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

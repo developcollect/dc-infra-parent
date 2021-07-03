@@ -13,10 +13,30 @@
 
   <artifactId>dc-infra-web</artifactId>
 
+  <properties>
+    <poi.version>4.1.2</poi.version>
+  </properties>
+
   <modules>
     <module>dc-infra-web-ssm</module>
     <module>dc-infra-web-common</module>
     <module>dc-infra-web-security</module>
   </modules>
+
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 </project>

@@ -29,7 +29,7 @@ public class MybatisPlusPageMethodArgumentResolver implements HandlerMethodArgum
         // 页码和页面大小
         int pageNo = resolvePageNo(nativeWebRequest);
         int pageSize = resolvePageSize(nativeWebRequest);
-        List<OrderItem> orderItems = resolveSort(nativeWebRequest);
+        List<OrderItem> orderItems = resolveSort(parameter, nativeWebRequest);
         PageDto<Object> page = new PageDto<>(pageNo, pageSize);
         page.setOrders(orderItems);
         return page;
@@ -60,7 +60,8 @@ public class MybatisPlusPageMethodArgumentResolver implements HandlerMethodArgum
         return 10;
     }
 
-    private List<OrderItem> resolveSort(NativeWebRequest webRequest) {
+    private List<OrderItem> resolveSort(MethodParameter parameter, NativeWebRequest webRequest) {
+        // todo 提取分页的泛型(实体类类型)
         String pageSortParams = webRequest.getParameter("pageSort");
         if (StrUtil.isNotBlank(pageSortParams)) {
             try {
@@ -72,7 +73,7 @@ public class MybatisPlusPageMethodArgumentResolver implements HandlerMethodArgum
                     if (co.length != 2) {
                         throw new IllegalArgumentException("分页排序参数解析失败：" + sortParam);
                     }
-                    OrderItem orderItem = new OrderItem(co[0], "asc".equals(co[1].toLowerCase()));
+                    OrderItem orderItem = new OrderItem(javaFieldToSqlField(null, co[0]), "asc".equals(co[1].toLowerCase()));
                     orders.add(orderItem);
                 }
                 return orders;
@@ -82,5 +83,17 @@ public class MybatisPlusPageMethodArgumentResolver implements HandlerMethodArgum
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * 将实体类的字段名转换成表字段名
+     * @param entityClass
+     * @param javaFieldName
+     * @return
+     */
+    private String javaFieldToSqlField(Class entityClass, String javaFieldName) {
+
+        // 暂时不从实体类取注解，直接转下划线形式
+        return StrUtil.toUnderlineCase(javaFieldName);
     }
 }

@@ -21,15 +21,23 @@ public class AvatarUtil {
      * 生成头像的base64编码
      * @param id id
      */
-    public static String createBase64Avatar(int id)  {
-        return Base64.encode(create(id));
+    public static String createBase64(int id)  {
+        return Base64.encode(createBytes(id));
     }
 
     /**
-     * 根据id生成一个头像，颜色随机。如果是使用hashCode()值的话，值可能为负数。需要要注意。
+     * 根据id生成一个头像，颜色随机。
      * @param id
      */
-    public static byte[] create(int id)  {
+    public static byte[] createBytes(int id)  {
+        return ImgUtil.toBytes(createImg(id), "png");
+    }
+
+    /**
+     * 根据id生成一个头像，颜色随机。
+     * @param id
+     */
+    public static BufferedImage createImg(int id)  {
         int width = 20;
         int grid = 5;
         int padding = width / 2;
@@ -54,7 +62,7 @@ public class AvatarUtil {
 
         _2d.dispose();
 
-        return ImgUtil.toBytes(img, "png");
+        return img;
     }
 
     private static Color randomColor(int fc, int bc) {
@@ -72,8 +80,9 @@ public class AvatarUtil {
     }
 
     private static char[] createIdent(int id) {
-        BigInteger bi_content = new BigInteger((id + "").getBytes());
-        BigInteger bi = new BigInteger(id + "identicon" + id, 36);
+        BigInteger bi_content = new BigInteger(String.valueOf(id).getBytes());
+        int absId = Math.abs(id);
+        BigInteger bi = new BigInteger(absId + "identicon" + absId, 36);
         bi = bi.xor(bi_content);
         return bi.toString(10).toCharArray();
     }
