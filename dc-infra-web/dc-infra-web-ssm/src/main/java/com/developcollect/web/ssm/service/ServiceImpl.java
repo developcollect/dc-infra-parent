@@ -1,7 +1,6 @@
 package com.developcollect.web.ssm.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
@@ -9,7 +8,7 @@ import com.baomidou.mybatisplus.core.toolkit.Assert;
 import com.baomidou.mybatisplus.core.toolkit.ReflectionKit;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
-import com.developcollect.core.utils.LambdaUtil;
+import com.developcollect.web.ssm.utils.EntityUtil;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -28,7 +27,7 @@ public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybati
 
     @Override
     public <V> T getByField(SFunction<T, V> fieldGetter, V val) {
-        return getOne(Wrappers.<T>query().eq(LambdaUtil.getFieldName(fieldGetter), val));
+        return getOne(Wrappers.<T>query().eq(getColumnName(fieldGetter), val));
     }
 
     @Override
@@ -38,7 +37,7 @@ public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybati
 
     @Override
     public <V> boolean exist(SFunction<T, V> function, V val) {
-        return exist(Wrappers.<T>query().eq(LambdaUtil.getFieldName(function), val));
+        return exist(Wrappers.<T>query().eq(getColumnName(function), val));
     }
 
     @Override
@@ -51,16 +50,20 @@ public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybati
         return exist(
                 Wrappers.<T>query()
                         .eq(getIdFieldName(), id)
-                        .eq(LambdaUtil.getFieldName(fieldGetter), val)
+                        .eq(getColumnName(fieldGetter), val)
         );
     }
 
     @Override
     public <V> boolean checkAttrAvailable(Serializable id, SFunction<T, V> fieldGetter, V val) {
-        T one = getOne(Wrappers.<T>query().select(getIdFieldName()).eq(LambdaUtil.getFieldName(fieldGetter), val));
+        T one = getOne(Wrappers.<T>query().select(getIdFieldName()).eq(getColumnName(fieldGetter), val));
         return one == null || Objects.equals(getId(one), id);
     }
 
+
+    protected String getColumnName(SFunction sf) {
+        return EntityUtil.getColumnName(getEntityClass(), sf);
+    }
 
     protected Serializable getId(T entity) {
         Serializable idVal = (Serializable) ReflectionKit.getFieldValue(entity, getIdFieldName());
