@@ -16,16 +16,14 @@ import java.util.concurrent.locks.ReentrantLock;
 public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
 
     private static final Map<Object, ReentrantLock> lockMap = new ConcurrentHashMap<>();
-    private static final Set<Object> getLockFlagMap = new ConcurrentHashSet<>();
-
     private static final ReentrantLock lock = new ReentrantLock();
 
     /**
      * 尝试获取锁并锁定，如果获取锁成功，返回true
      */
     public static boolean tryLock(Object obj) {
+        lock.lock();
         try {
-            lock.lock();
             ReentrantLock lockForObj = lockMap.computeIfAbsent(obj, o -> new ReentrantLock());
             return lockForObj.tryLock();
         } finally {
@@ -38,29 +36,28 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
      */
     public static void lock(Object obj) {
         ReentrantLock lockForObj;
+        lock.lock();
         try {
-            lock.lock();
             lockForObj = lockMap.computeIfAbsent(obj, o -> new ReentrantLock());
-            getLockFlagMap.add(obj);
         } finally {
             lock.unlock();
         }
-        try {
-            lockForObj.lock();
-        } finally {
-            getLockFlagMap.remove(obj);
-        }
+
+        lockForObj.lock();
     }
 
     /**
      * 释放锁
      */
     public static void unlock(Object obj) {
+        lock.lock();
         try {
-            lock.lock();
-            ReentrantLock lockForObj = lockMap.computeIfAbsent(obj, o -> new ReentrantLock());
+            ReentrantLock lockForObj = lockMap.get(obj);
+            if (lockForObj == null) {
+                throw new IllegalArgumentException("释放锁前需要先上锁：" + obj);
+            }
             lockForObj.unlock();
-            if (lockForObj.getQueueLength() <= 0 && !getLockFlagMap.contains(obj)) {
+            if (!lockForObj.hasQueuedThreads() && !lockForObj.isLocked()) {
                 lockMap.remove(obj);
             }
         } finally {

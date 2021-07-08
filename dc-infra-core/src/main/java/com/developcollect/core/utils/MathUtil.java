@@ -1,7 +1,12 @@
 package com.developcollect.core.utils;
 
-import cn.hutool.core.lang.Assert;
 
+import cn.hutool.core.util.ArrayUtil;
+import com.developcollect.core.lang.Assert;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * BigDecimal 工具类
@@ -118,4 +123,24 @@ public class MathUtil extends cn.hutool.core.math.MathUtil {
         return sb.reverse().toString();
     }
 
+
+    public static int max(int... nums) {
+        Assert.notEmpty(nums);
+        return ArrayUtil.max(nums);
+    }
+
+
+    /**
+     * 取最大值，参数不能为空，参数的每个元素都不能为null
+     * @param nums
+     * @return
+     */
+    public static BigDecimal max(BigDecimal... nums) {
+        return ArrayUtil.max(nums);
+    }
+
+
+    public static BigDecimal min(BigDecimal... nums) {
+        return ArrayUtil.min(nums);
+    }
 }
