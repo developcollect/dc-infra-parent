@@ -7,6 +7,7 @@ import com.developcollect.core.utils.LambdaUtil;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Zhu KaiXiao
@@ -19,19 +20,39 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
     private static final Map<Object, Integer> lockCountMap = new ConcurrentHashMap<>();
 
     /**
+     * 在指定时间内尝试获取锁并锁定，如果获取锁成功，返回true，如果超时仍未获取锁，返回false
+     */
+    public static boolean tryLock(Object obj, long timeout, TimeUnit unit) {
+        long nanos = unit.toNanos(timeout);
+        if (nanos <= 0) {
+            return false;
+        }
+        long deadline = System.nanoTime() + nanos;
+        synchronized (obj) {
+            for (;;) {
+                if (System.nanoTime() >= deadline) {
+                    return false;
+                }
+                if (tryLock0(obj)) {
+                    return true;
+                } else {
+                    try {
+                        // 等待被唤醒或者超时
+                        obj.wait(timeout);
+                    } catch (InterruptedException e) {
+                        LambdaUtil.raise(e);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * 尝试获取锁并锁定，如果获取锁成功，返回true
      */
     public static boolean tryLock(Object obj) {
         synchronized (obj) {
-            boolean locked;
-            Thread currentThread = Thread.currentThread();
-            Thread thread = threadMap.computeIfAbsent(obj, k -> currentThread);
-            locked = thread == currentThread;
-            if (locked) {
-                Integer count = Optional.ofNullable(lockCountMap.get(obj)).orElse(0);
-                lockCountMap.put(obj, count + 1);
-            }
-            return locked;
+            return tryLock0(obj);
         }
     }
 
@@ -39,25 +60,20 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
      * 获取锁，如果锁被占用则一直等待
      */
     public static void lock(Object obj) {
-        boolean locked;
-
         synchronized (obj) {
-            do {
-                Thread currentThread = Thread.currentThread();
-                Thread thread = threadMap.computeIfAbsent(obj, k -> currentThread);
-                locked = thread == currentThread;
-                if (locked) {
-                    Integer count = Optional.ofNullable(lockCountMap.get(obj)).orElse(0);
-                    lockCountMap.put(obj, count + 1);
+            for (;;) {
+                if (tryLock0(obj)) {
+                    return;
                 } else {
                     try {
                         // 等待锁释放后被通知
                         obj.wait();
                     } catch (InterruptedException e) {
+                        // 线程被强制中断， 异常直接向上抛出
                         LambdaUtil.raise(e);
                     }
                 }
-            } while (!locked);
+            }
         }
     }
 
@@ -89,4 +105,16 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
         }
     }
 
+
+    private static boolean tryLock0(Object obj) {
+        boolean locked;
+        Thread currentThread = Thread.currentThread();
+        Thread thread = threadMap.computeIfAbsent(obj, k -> currentThread);
+        locked = thread == currentThread;
+        if (locked) {
+            Integer count = Optional.ofNullable(lockCountMap.get(obj)).orElse(0);
+            lockCountMap.put(obj, count + 1);
+        }
+        return locked;
+    }
 }

@@ -1,6 +1,7 @@
 package com.developcollect.core.thread.lock;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.developcollect.core.lang.SystemClock;
 import com.developcollect.core.utils.StrUtil;
 import org.junit.Test;
@@ -8,6 +9,7 @@ import org.junit.Test;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,6 +50,55 @@ public class LockUtilTest {
             t.setName("T" + i);
             t.start();
         }
+
+
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testTryLockTimeout() {
+        String key = "123";
+
+        int threadNum = 3;
+        CountDownLatch countDownLatch = new CountDownLatch(threadNum);
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
+
+        Runnable runnable = () -> {
+            String name = Thread.currentThread().getName();
+            int timeout = RandomUtil.randomInt(1, 8);
+            try {
+                // 等待其他线程，只有所有线程同时到达这里之后才会继续往下走
+                cyclicBarrier.await();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(StrUtil.format("{} ==> {}: 尝试上锁, 超时: {}s", System.currentTimeMillis(), name, timeout));
+            boolean locked = LockUtil.tryLock(key, timeout, TimeUnit.SECONDS);
+            System.out.println(StrUtil.format("{} ==> {}: 获取锁 {}", System.currentTimeMillis(), name, locked));
+
+            ThreadUtil.sleep(RandomUtil.randomLong(2000, 4000));
+
+            if (locked) {
+                LockUtil.unlock(key);
+                System.out.println(StrUtil.format("{} ==> {}: 释放锁",System.currentTimeMillis(), name));
+            }
+
+            System.out.println();
+            countDownLatch.countDown();
+        };
+
+
+        for (int i = 0; i < threadNum; i++) {
+            Thread t = new Thread(runnable);
+            t.setName("T" + i);
+            t.start();
+        }
+
 
 
         try {
