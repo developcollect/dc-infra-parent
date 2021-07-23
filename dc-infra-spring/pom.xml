@@ -57,6 +57,12 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>5.3.6</version>
+            <optional>true</optional>
+        </dependency>
 
         <dependency>
             <groupId>com.developcollect</groupId>

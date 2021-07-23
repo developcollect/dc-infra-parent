@@ -11,7 +11,9 @@ import java.util.regex.Pattern;
  *
  * @author zak
  * @since 1.0.0
+ * @deprecated {@link DesensitizedUtil}
  */
+@Deprecated
 public class DataMaskUtil {
 
     private static final int PHONE_LENGTH = 11;

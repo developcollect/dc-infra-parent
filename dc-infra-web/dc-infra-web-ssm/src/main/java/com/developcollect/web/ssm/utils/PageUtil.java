@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.developcollect.core.utils.CollUtil;
 
+import java.util.Collections;
 import java.util.function.Function;
 
 public class PageUtil {
@@ -34,5 +35,17 @@ public class PageUtil {
             p2.addOrder(orderItems);
             return p2;
         }
+    }
+
+    public static <T> IPage<T> emptyPage(IPage<?> pageParam) {
+        Page<T> p2 = new Page<>(pageParam.getCurrent(), pageParam.getSize(), 0);
+        p2.setRecords(Collections.emptyList());
+        return p2;
+    }
+
+    public static <T> IPage<T> emptyPage() {
+        Page<T> p2 = new Page<>(1, 10, 0);
+        p2.setRecords(Collections.emptyList());
+        return p2;
     }
 }

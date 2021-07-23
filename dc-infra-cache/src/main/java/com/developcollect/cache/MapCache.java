@@ -1,12 +1,16 @@
 package com.developcollect.cache;
 
 import cn.hutool.cache.impl.TimedCache;
+import com.developcollect.core.thread.lock.LockUtil;
 
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 public class MapCache<K, V> implements Cache<K, V> {
     private static final String RECORD_TIME_KEY_PREFIX = "CACHE_KEY_STORE_TIME:";
+    /**
+     * TimedCache里有线程安全处理(具体没仔细看，只看到了有lock)，所以这里不做处理
+     */
     private TimedCache<K, V> cache = new TimedCache<>(0, new HashMap<>());
 
 

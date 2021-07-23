@@ -105,9 +105,15 @@
             <version>1.6.2</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.11.4</version>
+            <optional>true</optional>
+        </dependency>
 
 
-<!--        能解析java的泛型类型，包括lambda，但是还没测试-->
+        <!--        能解析java的泛型类型，包括lambda，但是还没测试-->
 <!--        <dependency>-->
 <!--            <groupId>net.jodah</groupId>-->
 <!--            <artifactId>typetools</artifactId>-->

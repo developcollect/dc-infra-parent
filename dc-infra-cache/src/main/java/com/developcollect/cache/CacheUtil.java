@@ -10,6 +10,13 @@ public class CacheUtil {
 
     private static Cache<String, String> cache = new MapCache<>();
 
+    public static void set(String key, Object value) {
+        if (value instanceof String) {
+            set(key, (String) value);
+        } else {
+            // todo value的类型(泛型)选中cache
+        }
+    }
 
     public static void set(String key, String value) {
         cache.set(key, value);
