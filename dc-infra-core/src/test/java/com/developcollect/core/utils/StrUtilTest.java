@@ -35,4 +35,13 @@ public class StrUtilTest {
         Assert.assertEquals("haifeisi", StrUtil.right("haifeisi", 8));
         Assert.assertEquals("haifeisi", StrUtil.right("haifeisi", 9));
     }
+
+    @Test
+    public void test_replace() {
+        System.out.println(StrUtil.replace("13987419722", -1, -14, '*', 5));
+        Assert.assertEquals("139******9722", StrUtil.replace("13987419722", 3, 7, '*', 6));
+        Assert.assertEquals("139****9722", StrUtil.replace("13987419722", 3, 7, '*', 4));
+        Assert.assertEquals("139***9722", StrUtil.replace("13987419722", 3, 7, '*', 3));
+        Assert.assertEquals("139****9722", StrUtil.replace("13987419722", 3, 7, '*', -1));
+    }
 }

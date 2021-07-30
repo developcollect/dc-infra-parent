@@ -34,6 +34,17 @@ public class DesensitizedUtil extends cn.hutool.core.util.DesensitizedUtil {
      * @param end       保留：后面的end位数；从1开始
      */
     public static String desensitized(String str, int front, int end) {
+        return desensitized(str, front, end, -1);
+    }
+
+    /**
+     * 通用的脱敏方法
+     * @param str 字符串
+     * @param front     保留：前面的front位数；从1开始
+     * @param end       保留：后面的end位数；从1开始
+     * @param stars     保留多少个*  小于0的话就是自动
+     */
+    public static String desensitized(String str, int front, int end, int stars) {
         // 字符串不能为空
         if (StrUtil.isBlank(str)) {
             return StrUtil.EMPTY;
@@ -46,6 +57,7 @@ public class DesensitizedUtil extends cn.hutool.core.util.DesensitizedUtil {
         if (front < 0 || end < 0) {
             return StrUtil.EMPTY;
         }
-        return StrUtil.hide(str, front, str.length() - end);
+
+        return StrUtil.hide(str, front, str.length() - end, stars);
     }
 }
