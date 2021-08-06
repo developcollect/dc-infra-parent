@@ -54,4 +54,13 @@ public class ThreadUtil extends cn.hutool.core.thread.ThreadUtil {
             }
         }
     }
+
+    public static long currentThreadId() {
+        return Thread.currentThread().getId();
+    }
+
+    public static String currentThreadName() {
+        return Thread.currentThread().getName();
+    }
+
 }

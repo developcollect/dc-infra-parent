@@ -2,7 +2,9 @@ package com.developcollect.core.thread.lock;
 
 
 
+import com.developcollect.core.thread.ThreadUtil;
 import com.developcollect.core.utils.LambdaUtil;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  * @date 2021/4/22 14:42
  */
+@Slf4j
 public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
 
     private static final Map<Object, Thread> threadMap = new ConcurrentHashMap<>();
@@ -60,6 +63,7 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
      * 获取锁，如果锁被占用则一直等待
      */
     public static void lock(Object obj) {
+//        log.info("锁定：{}", obj);
         synchronized (obj) {
             for (;;) {
                 if (tryLock0(obj)) {
@@ -68,6 +72,7 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
                     try {
                         // 等待锁释放后被通知
                         obj.wait();
+//                        log.info("线程被唤醒：TH[{}], KEY[{}]", ThreadUtil.currentThreadName(), obj);
                     } catch (InterruptedException e) {
                         // 线程被强制中断， 异常直接向上抛出
                         LambdaUtil.raise(e);
@@ -81,6 +86,7 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
      * 释放锁
      */
     public static void unlock(Object obj) {
+//        log.info("释放：{}", obj);
         synchronized (obj) {
             Thread thread = threadMap.get(obj);
             if (thread == null) {
@@ -105,6 +111,37 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
         }
     }
 
+
+    // region 对参数为String的锁操作进行优化
+
+    public static boolean tryLock(String lockKey, long timeout, TimeUnit unit) {
+        return tryLock((Object) lockKey.intern(), timeout, unit);
+    }
+
+
+    /**
+     * 尝试获取锁并锁定，如果获取锁成功，返回true
+     */
+    public static boolean tryLock(String lockKey) {
+        return tryLock((Object) lockKey.intern());
+    }
+
+    /**
+     * 获取锁，如果锁被占用则一直等待
+     */
+    public static void lock(String lockKey) {
+        lock((Object) lockKey.intern());
+    }
+
+    /**
+     * 释放锁
+     */
+    public static void unlock(String lockKey) {
+        unlock((Object) lockKey.intern());
+    }
+
+
+    // endregion
 
     private static boolean tryLock0(Object obj) {
         boolean locked;

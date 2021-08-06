@@ -4,17 +4,14 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.developcollect.core.lang.SystemClock;
 import com.developcollect.core.utils.StrUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.*;
 
-import static org.junit.Assert.*;
 
+
+@Slf4j
 public class LockUtilTest {
 
     @Test
@@ -257,4 +254,44 @@ public class LockUtilTest {
         ThreadUtil.sync(new Object());
     }
 
+
+    @Test
+    public void test_ss() {
+
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2, com.developcollect.core.thread.ThreadUtil.createThreadFactoryBuilder().setDaemon(true).setNamePrefix("ORDER_SCAN_").build());
+        executor.scheduleAtFixedRate(() -> {
+            changePos(2349948568892340L, () -> {
+                log.info("模拟订单状态更新");
+                ThreadUtil.sleep(RandomUtil.randomLong(600, 3200));
+            });
+        }, 1, 1, TimeUnit.SECONDS);
+
+        while (true) {
+            changePos(2349948568892340L, () -> {
+                log.info("模拟下单操作");
+                ThreadUtil.sleep(RandomUtil.randomLong(300, 2600));
+            });
+            ThreadUtil.sleep(RandomUtil.randomLong(800, 1400));
+        }
+    }
+
+
+    private void changePos(long id, Runnable runnable) {
+        String lockKey = "STRATEGY_TRADE_LOCK_KEY_PREFIX" + id;
+        log.debug("[TL] 尝试锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
+        LockUtil.lock(lockKey);
+        log.debug("[TL] 获取锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
+        try {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                log.error("Run Error: ", e);
+                throw e;
+            }
+        } finally {
+            log.debug("[TL] 尝试释放[{}]  TH:[{}]", id, Thread.currentThread().getName());
+            LockUtil.unlock(lockKey);
+            log.debug("[TL] 释放锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
+        }
+    }
 }
