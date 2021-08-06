@@ -118,7 +118,7 @@ public class ExportAspect {
                 // 4. 写入数据到excel
                 this.writeExcel(wb, valuesList, pos);
                 // 如果已经到了最后一页， 推出循环
-                if (page.getCurrent() == page.getPages()) {
+                if (page.getCurrent() >= page.getPages()) {
                     break;
                 }
                 pos += valuesList.size();
@@ -245,8 +245,16 @@ public class ExportAspect {
             return page;
         }
 
-        Page page = new Page(1, 1, 0);
-        page.setRecords(Collections.emptyList());
+        Page page;
+        if (retData instanceof List) {
+            List list = (List) retData;
+            page = new Page(1, list.size(), list.size());
+            page.setRecords(list);
+        } else {
+            page = new Page(1, 1, 0);
+            page.setRecords(Collections.emptyList());
+        }
+
         return page;
     }
 
