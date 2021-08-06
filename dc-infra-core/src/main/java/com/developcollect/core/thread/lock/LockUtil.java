@@ -113,6 +113,10 @@ public class LockUtil extends cn.hutool.core.thread.lock.LockUtil {
 
 
     // region 对参数为String的锁操作进行优化
+    /*
+     * 当字符串在运行时通过+连接时，对象可能在堆区(具体什么时候在堆区，什么是否在常量池还不清楚)
+     * 导致锁定的不是同一个对象，就会导致死锁。因此统一调用intern()获取常量池中的字符串
+     */
 
     public static boolean tryLock(String lockKey, long timeout, TimeUnit unit) {
         return tryLock((Object) lockKey.intern(), timeout, unit);
