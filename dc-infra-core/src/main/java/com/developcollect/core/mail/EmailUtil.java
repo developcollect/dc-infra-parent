@@ -44,7 +44,7 @@ public class EmailUtil {
         return send(to, subject, content, false, files);
     }
 
-    public static String sendText(String to, String subject, String content, DataSource... dataSources) {
+    public static String sendText(String to, String subject, String content, DataSource[] dataSources) {
         return send(to, subject, content, false, dataSources);
     }
 
@@ -63,7 +63,7 @@ public class EmailUtil {
         return send(to, subject, content, true, files);
     }
 
-    public static String sendHtml(String to, String subject, String content, DataSource... dataSources) {
+    public static String sendHtml(String to, String subject, String content, DataSource[] dataSources) {
         return send(to, subject, content, true, dataSources);
     }
 
@@ -82,7 +82,7 @@ public class EmailUtil {
         return send(splitAddress(to), subject, content, isHtml, files);
     }
 
-    public static String send(String to, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(String to, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(splitAddress(to), subject, content, isHtml, dataSources);
     }
 
@@ -104,7 +104,7 @@ public class EmailUtil {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, isHtml, files);
     }
 
-    public static String send(String to, String cc, String bcc, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(String to, String cc, String bcc, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, isHtml, dataSources);
     }
 
@@ -121,7 +121,7 @@ public class EmailUtil {
         return send(tos, subject, content, false, files);
     }
 
-    public static String sendText(Collection<String> tos, String subject, String content, DataSource... dataSources) {
+    public static String sendText(Collection<String> tos, String subject, String content, DataSource[] dataSources) {
         return send(tos, subject, content, false, dataSources);
     }
 
@@ -139,7 +139,7 @@ public class EmailUtil {
         return send(tos, subject, content, true, files);
     }
 
-    public static String sendHtml(Collection<String> tos, String subject, String content, DataSource... dataSources) {
+    public static String sendHtml(Collection<String> tos, String subject, String content, DataSource[] dataSources) {
         return send(tos, subject, content, true, dataSources);
     }
 
@@ -157,7 +157,7 @@ public class EmailUtil {
         return send(tos, null, null, subject, content, isHtml, files);
     }
 
-    public static String send(Collection<String> tos, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(Collection<String> tos, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(tos, null, null, subject, content, isHtml, dataSources);
     }
 
@@ -178,7 +178,7 @@ public class EmailUtil {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, null, isHtml, files);
     }
 
-    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, null, isHtml, dataSources);
     }
 
@@ -200,7 +200,7 @@ public class EmailUtil {
         return send(mailAccount, splitAddress(to), subject, content, isHtml, files);
     }
 
-    public static String send(MailAccount mailAccount, String to, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(MailAccount mailAccount, String to, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, splitAddress(to), subject, content, isHtml, dataSources);
     }
 
@@ -219,7 +219,7 @@ public class EmailUtil {
         return send(mailAccount, tos, null, null, subject, content, isHtml, files);
     }
 
-    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, tos, null, null, subject, content, isHtml, dataSources);
     }
 
@@ -241,7 +241,7 @@ public class EmailUtil {
         return send(mailAccount, false, tos, ccs, bccs, subject, content, null, isHtml, files);
     }
 
-    public static String send(MailAccount mailAccount, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource... dataSources) {
+    public static String send(MailAccount mailAccount, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, false, tos, ccs, bccs, subject, content, null, isHtml, dataSources);
     }
 
@@ -261,7 +261,7 @@ public class EmailUtil {
         return send(to, subject, content, imageMap, true, files);
     }
 
-    public static String sendHtml(String to, String subject, String content, Map<String, InputStream> imageMap, DataSource... dataSources) {
+    public static String sendHtml(String to, String subject, String content, Map<String, InputStream> imageMap, DataSource[] dataSources) {
         return send(to, subject, content, imageMap, true, dataSources);
     }
 
@@ -281,7 +281,7 @@ public class EmailUtil {
         return send(splitAddress(to), subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(splitAddress(to), subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -304,7 +304,7 @@ public class EmailUtil {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(String to, String cc, String bcc, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(String to, String cc, String bcc, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(splitAddress(to), splitAddress(cc), splitAddress(bcc), subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -323,7 +323,7 @@ public class EmailUtil {
         return send(tos, subject, content, imageMap, true, files);
     }
 
-    public static String sendHtml(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, DataSource... dataSources) {
+    public static String sendHtml(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, DataSource[] dataSources) {
         return send(tos, subject, content, imageMap, true, dataSources);
     }
 
@@ -342,7 +342,7 @@ public class EmailUtil {
         return send(tos, null, null, subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(tos, null, null, subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -364,7 +364,7 @@ public class EmailUtil {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(accountSupplier.get(), true, tos, ccs, bccs, subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -387,7 +387,7 @@ public class EmailUtil {
         return send(mailAccount, splitAddress(to), subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(MailAccount mailAccount, String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(MailAccount mailAccount, String to, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, splitAddress(to), subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -408,7 +408,7 @@ public class EmailUtil {
         return send(mailAccount, tos, null, null, subject, content, imageMap, isHtml, files);
     }
 
-    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+    public static String send(MailAccount mailAccount, Collection<String> tos, String subject, String content, Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, tos, null, null, subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -433,7 +433,7 @@ public class EmailUtil {
     }
 
     public static String send(MailAccount mailAccount, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content, Map<String, InputStream> imageMap,
-                              boolean isHtml, DataSource... dataSources) {
+                              boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, false, tos, ccs, bccs, subject, content, imageMap, isHtml, dataSources);
     }
 
@@ -461,7 +461,7 @@ public class EmailUtil {
     }
 
     private static String send(MailAccount mailAccount, boolean useGlobalSession, Collection<String> tos, Collection<String> ccs, Collection<String> bccs, String subject, String content,
-                               Map<String, InputStream> imageMap, boolean isHtml, DataSource... dataSources) {
+                               Map<String, InputStream> imageMap, boolean isHtml, DataSource[] dataSources) {
         return send(mailAccount, useGlobalSession, tos, ccs, bccs, subject, content, imageMap, isHtml, mail -> mail.setAttachments(dataSources));
     }
 
