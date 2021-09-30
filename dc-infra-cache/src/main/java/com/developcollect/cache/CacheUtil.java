@@ -11,10 +11,14 @@ public class CacheUtil {
     private static Cache<String, String> cache = new MapCache<>();
 
     public static void set(String key, Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("暂不支持[null]的Value");
+        }
         if (value instanceof String) {
             set(key, (String) value);
         } else {
             // todo value的类型(泛型)选中cache
+            throw new IllegalArgumentException("暂不支持[" + value.getClass().getName() + "]类型的Value");
         }
     }
 
@@ -63,5 +67,16 @@ public class CacheUtil {
 
     public static long getAge(String key) {
         return cache.getAge(key);
+    }
+
+
+    /**
+     * 删除指定key的缓存
+     * 无论key是否存在，只要删除没有出错则返回true
+     * @param key 缓存的key
+     * @return 是否删除完成
+     */
+    public static boolean delete(String key) {
+        return cache.del(key);
     }
 }
