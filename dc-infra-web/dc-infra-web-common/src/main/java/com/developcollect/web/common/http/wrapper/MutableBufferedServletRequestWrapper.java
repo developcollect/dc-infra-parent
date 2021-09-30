@@ -1,6 +1,7 @@
-package com.developcollect.web.common.filter.wrapper;
+package com.developcollect.web.common.http.wrapper;
 
 import cn.hutool.core.io.IoUtil;
+import com.developcollect.web.common.http.MutableRequest;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -8,9 +9,9 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public class BufferedServletRequestWrapper extends HttpServletRequestWrapper {
+public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrapper implements MutableRequest {
 
-    private byte[] buffer;
+    private volatile byte[] buffer;
 
     /**
      * Constructs a request object wrapping the given request.
@@ -18,7 +19,7 @@ public class BufferedServletRequestWrapper extends HttpServletRequestWrapper {
      * @param request
      * @throws IllegalArgumentException if the request is null
      */
-    public BufferedServletRequestWrapper(HttpServletRequest request) throws IOException {
+    public MutableBufferedServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
         this.buffer = IoUtil.readBytes(request.getInputStream(), false);
     }
@@ -27,6 +28,11 @@ public class BufferedServletRequestWrapper extends HttpServletRequestWrapper {
     @Override
     public ServletInputStream getInputStream() {
         return new BufferedServletInputStream(buffer);
+    }
+
+    @Override
+    public void setBody(byte[] bytes) throws IOException {
+        this.buffer = bytes;
     }
 
 
