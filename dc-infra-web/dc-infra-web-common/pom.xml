@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>dc-infra-parent</artifactId>
+    <artifactId>dc-infra-web</artifactId>
     <groupId>com.developcollect</groupId>
     <version>1.1.1</version>
   </parent>
@@ -26,6 +26,19 @@
       <artifactId>spring-boot-starter-security</artifactId>
       <version>2.4.5</version>
       <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.developcollect</groupId>
+      <artifactId>dc-infra-core</artifactId>
+      <version>1.1.1</version>
     </dependency>
   </dependencies>
 
