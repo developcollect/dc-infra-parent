@@ -9,8 +9,11 @@ import org.apache.bcel.classfile.Method;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 @Slf4j
 public class BcelClassLoader {
@@ -60,8 +63,20 @@ public class BcelClassLoader {
     public List<ClassAndMethod> scanMethods(Predicate<ClassAndMethod> filter) {
         List<ClassAndMethod> classAndMethods = new ArrayList<>();
         for (String classPath : classPaths) {
-            FileUtil.walkFiles(classPath, file -> {
-                if (file.getName().endsWith(".class") && file.isFile()) {
+            File f = new File(classPath);
+            if (!f.exists()) {
+                log.error("class path not exists: {}", classPath);
+                continue;
+            }
+
+            // 文件夹，直接遍历class文件
+            if (f.isDirectory()) {
+                FileUtil.walkFiles(classPath, file -> {
+                    // 忽略资源文件
+                    if (!file.getName().endsWith(".class") || !file.isFile()) {
+                        return;
+                    }
+
                     try {
                         ClassParser classParser = new ClassParser(file.getAbsolutePath());
                         JavaClass javaClass = classParser.parse();
@@ -75,8 +90,36 @@ public class BcelClassLoader {
                     } catch (IOException e) {
                         log.error("parse class error: {}", file.getAbsolutePath(), e);
                     }
+                });
+            }
+            // 否则就当做jar包遍历
+            else {
+                try (JarFile jar = new JarFile(f)) {
+                    for (Enumeration<JarEntry> enumeration = jar.entries(); enumeration.hasMoreElements(); ) {
+                        JarEntry jarEntry = enumeration.nextElement();
+                        // 忽略资源文件
+                        if (jarEntry.isDirectory() || !jarEntry.getName().endsWith(".class")) {
+                            continue;
+                        }
+
+                        try {
+                            ClassParser classParser = new ClassParser(classPath, jarEntry.getName());
+                            JavaClass javaClass = classParser.parse();
+                            Method[] methods = javaClass.getMethods();
+                            for (Method method : methods) {
+                                ClassAndMethod classAndMethod = new ClassAndMethod(javaClass, method);
+                                if (filter.test(classAndMethod)) {
+                                    classAndMethods.add(classAndMethod);
+                                }
+                            }
+                        } catch (IOException e) {
+                            log.error("parse class error: {}", jarEntry.getName(), e);
+                        }
+                    }
+                } catch (IOException e) {
+                    log.error("walk jar error: {}", f.getAbsolutePath(), e);
                 }
-            });
+            }
         }
         return classAndMethods;
     }

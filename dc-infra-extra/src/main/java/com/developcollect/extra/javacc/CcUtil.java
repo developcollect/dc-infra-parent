@@ -46,6 +46,10 @@ public class CcUtil {
         // 定位classes目录
         String[] classPaths = collectClassPaths(projectStructure);
 
+        return parseChain(classPaths, scanFilter, parseFilter);
+    }
+
+    public static Map<ClassAndMethod, CallInfo> parseChain(String[] classPaths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter) {
         // 扫描类，定位需要解析的类和方法
         BcelClassLoader bcelClassLoader = new BcelClassLoader(classPaths);
         List<ClassAndMethod> classAndMethods = bcelClassLoader.scanMethods(scanFilter);
@@ -60,7 +64,6 @@ public class CcUtil {
 
         return result;
     }
-
 
     private static String[] collectClassPaths(ProjectStructure projectStructure) {
         List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
