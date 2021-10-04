@@ -6,8 +6,10 @@ import com.developcollect.core.utils.CollectionUtil;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class TreeUtil {
@@ -370,5 +372,34 @@ public class TreeUtil {
             return false;
         }
         return CollUtil.contains(root.getChildren(), ele -> ele == other);
+    }
+
+
+    /**
+     * 树转list
+     *
+     * @param <T> 泛型
+     * @return list
+     */
+    public static <T extends IMasterNode<T>> List<T> flat(T root, BiConsumer<T, Consumer<T>> traversalFunc) {
+        List<T> list = new ArrayList<>();
+        traversalFunc.accept(root, list::add);
+        return list;
+    }
+
+    /**
+     * 树转list，带过滤功能
+     *
+     * @param <T> 泛型
+     * @return list
+     */
+    public static <T extends IMasterNode<T>> List<T> flat(T root, BiConsumer<T, Consumer<T>> traversalFunc, Predicate<T> filter) {
+        List<T> list = new ArrayList<>();
+        traversalFunc.accept(root, t -> {
+            if (filter.test(t)) {
+                list.add(t);
+            }
+        });
+        return list;
     }
 }

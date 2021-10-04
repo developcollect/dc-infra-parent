@@ -8,14 +8,12 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
  * 文件工具类
  *
- * @author pss
- * @version 1.0
- * @date 2019/10/28
  */
 public class FileUtil extends cn.hutool.core.io.FileUtil {
 
@@ -632,8 +630,9 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
 
     /**
      * 判断指定文件夹下是否有文件，不递归判断
+     * 注意：文件夹下必须有文件才返回true，即使文件夹中有嵌套文件夹也返回false
      *
-     * @param dir
+     * @param dir 文件夹
      * @return boolean
      * @author Zhu Kaixiao
      * @date 2020/10/24 11:56
@@ -727,16 +726,18 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      * @param child
      * @return java.lang.String
      */
-    public static String relaPath(File parent, File child) {
+    public static String relativePath(File parent, File child) {
         String parentAbsolutePath = parent.getAbsolutePath();
         return child.getAbsolutePath().substring(parentAbsolutePath.length());
     }
 
 
     /**
-     * 同步源文件到目标文件
-     * 或者 同步源文件夹到目标文件夹
-     *
+     * 同步源文件和目标文件
+     * 同步前：
+     * a,b  ==   a,c,d
+     * 同步后：
+     * a,b,c,d  ==   a,b,c,d
      * @param source
      * @param target
      * @author Zhu Kaixiao
@@ -779,7 +780,7 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      * @author Zhu Kaixiao
      * @date 2020/10/27 10:02
      */
-    private static void copyIfChanged(File source, File target) {
+    public static void copyIfChanged(File source, File target) {
         if (target.exists()) {
             if (source.length() == target.length() && checksumCRC32(source) == checksumCRC32(target)) {
                 return;
@@ -792,4 +793,8 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
         }
     }
 
+
+    public static void walkFiles(String path, Consumer<File> consumer) {
+        walkFiles(new File(path), consumer);
+    }
 }

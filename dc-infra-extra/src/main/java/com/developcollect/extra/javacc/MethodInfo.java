@@ -19,7 +19,7 @@ public class MethodInfo {
     private Type[] argumentTypes;
 
 
-    public String getMethodSig() {
+    public String getMethodSignature() {
         return CcInnerUtil.getMethodSig(className, methodName, argumentTypes);
     }
 
@@ -33,6 +33,6 @@ public class MethodInfo {
 
     @Override
     public String toString() {
-        return getMethodSig();
+        return getMethodSignature();
     }
 }

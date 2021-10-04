@@ -1,11 +1,12 @@
 package com.developcollect.core.tree;
 
+import com.developcollect.core.lang.holder.AbstractValueHolder;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class TreeUtilTest {
 
@@ -13,18 +14,32 @@ public class TreeUtilTest {
     @Test
     public void test2() {
         List<TestTreeNode> nodes = new ArrayList<>();
-        TestVO vo  = TreeUtil.convertToTreeAndSort(nodes, tnode -> null, null);
+        TestVO vo = TreeUtil.convertToTreeAndSort(nodes, tnode -> null, null);
+    }
+
+
+    @Test
+    public void tset_resolveFilePaths() {
+        List<String> paths = new ArrayList<>();
+        paths.add("/a/b/c");
+        paths.add("/a/a1.txt");
+        paths.add("/a/b/b1.txt");
+        paths.add("/a/b/b2.mp3");
+        paths.add("/a/b/c/c1.mp4");
+        paths.add("/a/b/c/c2.txt");
+
+        PathTree pathTree = TreeUtil.resolveFilePaths(paths);
+        System.out.println(1);
     }
 
 
     /**
      * <img src="https://img2018.cnblogs.com/blog/1031555/201905/1031555-20190505124444793-922082397.png"/>
-     *
-     *               G
-     *       D               M
-     *  A        F      H         Z
-     *        E
-     *
+     * <p>
+     * G
+     * D               M
+     * A        F      H         Z
+     * E
      */
     private TestVO buildBinaryTree() {
         TestVO tg = createTree("G");
@@ -104,7 +119,6 @@ public class TreeUtilTest {
         t.setChildren(new ArrayList<>());
         return t;
     }
-
 
 
     @Test
@@ -200,5 +214,14 @@ public class TreeUtilTest {
         StringBuilder sb = new StringBuilder();
         TreeUtil.levelOrder(root, vo -> sb.append(vo.getValue()));
         assertEquals("GDMAFHZE", sb.toString());
+    }
+
+
+    @Test
+    public void test_flat() {
+        TestVO t2 = buildTree();
+        List<TestVO> vos = TreeUtil.flat(t2, TreeUtil::postOrder);
+        String s2 = vos.stream().map(AbstractValueHolder::getValue).reduce((g, s) -> g + s).orElse(null);
+        assertEquals("ENZFGHBIJKCLMDA", s2);
     }
 }

@@ -5,36 +5,60 @@ import cn.hutool.core.exceptions.UtilException;
 import com.developcollect.core.tree.TreeUtil;
 import com.developcollect.extra.maven.MavenUtil;
 import com.developcollect.extra.maven.ProjectStructure;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.shared.invoker.InvocationResult;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 
 /**
  * call chain util
  */
+@Slf4j
 public class CcUtil {
 
     /**
      * 传入一个Maven项目，解析该项目中的类中的方法调用关系
+     *
      * @param mavenProjectDir maven项目文件夹
      * @return
      */
-    public static Object parseChain(String mavenProjectDir) {
+    public static Map<ClassAndMethod, CallInfo> parseChain(String mavenProjectDir, Predicate<ClassAndMethod> filter) {
         // 解析maven项目结构
         ProjectStructure projectStructure = MavenUtil.analysisProject(mavenProjectDir);
 
         // 执行clear、compile命令，定位classes目录
-        InvocationResult invocationResult = MavenUtil.mvn(projectStructure.getPomPath(), new String[]{"clean", "compile"}, line -> {});
+        InvocationResult invocationResult = MavenUtil.mvn(projectStructure.getPomPath(), new String[]{"clean", "compile"});
         if (invocationResult.getExitCode() != 0) {
             throw new UtilException("执行【mvn clear compile】命令失败");
         }
 
+        // 定位classes目录
+        String[] classPaths = collectClassPaths(projectStructure);
 
-        // 识别出依赖的jar包
-        // 定位需要解析的类和方法，执行解析
-        // 扫描类
+        // 扫描类，定位需要解析的类和方法
+        BcelClassLoader bcelClassLoader = new BcelClassLoader(classPaths);
+        List<ClassAndMethod> classAndMethods = bcelClassLoader.scanMethods(filter);
 
-        return null;
+        // 执行解析
+        CallChainParser parser = new CallChainParser(bcelClassLoader);
+        Map<ClassAndMethod, CallInfo> result = classAndMethods.stream()
+                .collect(Collectors.toMap(cm -> cm, cm -> parser.parse(cm.getJavaClass(), cm.getMethod())));
+
+        return result;
     }
+
+    private static String[] collectClassPaths(ProjectStructure projectStructure) {
+        List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
+        String[] classPaths = projectStructures.stream()
+                .map(ps -> ps.getProjectPath() + "/target/classes")
+                .toArray(String[]::new);
+        return classPaths;
+    }
+
 
 
 

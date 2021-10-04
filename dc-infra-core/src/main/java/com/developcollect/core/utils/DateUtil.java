@@ -891,7 +891,6 @@ public class DateUtil extends cn.hutool.core.date.DateUtil {
      * 例如传入的是2020-04-28号(星期二)，调用该方法获取的就是2020/05/03 23:59:59.999999999
      *
      * @return java.time.LocalDateTime
-     * @author Zhu Kaixiao
      * @date 2020/4/28 12:00
      */
     public static LocalDateTime endOfWeek(LocalDateTime date) {
@@ -904,7 +903,6 @@ public class DateUtil extends cn.hutool.core.date.DateUtil {
      *
      * @param localDateTime
      * @return
-     * @author pss
      * @date 2021/1/5 14:00
      */
     public static Date localDateTimeToDate(LocalDateTime localDateTime) {
@@ -916,7 +914,6 @@ public class DateUtil extends cn.hutool.core.date.DateUtil {
      *
      * @param localDate
      * @return
-     * @author pss
      * @date 2021/1/5 14:00
      */
     public static Date localDateToDate(LocalDate localDate) {
@@ -928,7 +925,6 @@ public class DateUtil extends cn.hutool.core.date.DateUtil {
      *
      * @param date
      * @return
-     * @author pss
      * @date 2021/1/5 14:00
      */
     public static LocalDate dateToLocalDate(Date date) {

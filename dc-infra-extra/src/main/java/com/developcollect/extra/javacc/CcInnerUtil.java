@@ -3,7 +3,10 @@ package com.developcollect.extra.javacc;
 import cn.hutool.core.util.StrUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
-import org.apache.bcel.generic.*;
+import org.apache.bcel.generic.ConstantPoolGen;
+import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +74,10 @@ class CcInnerUtil {
             sb.append(")");
         }
         return sb.toString();
+    }
+
+    public static String methodSignature(Method method) {
+        return method.getName() + argumentList(method.getArgumentTypes());
     }
 
     public static List<String> genImplClassMethodWithArgs(Method[] methods) {
@@ -281,8 +288,8 @@ class CcInnerUtil {
         while (!stack.isEmpty()) {
             DeepWrapper<CallInfo> tree = stack.pop();
             CallInfo ci = tree.value;
-            String methodSig = ci.getCaller().getMethodInfo().getMethodSig();
-            printCount.put(methodSig, printCount.getOrDefault(ci.getCaller().getMethodInfo().getMethodSig(), 0) + 1);
+            String methodSig = ci.getCaller().getMethodInfo().getMethodSignature();
+            printCount.put(methodSig, printCount.getOrDefault(ci.getCaller().getMethodInfo().getMethodSignature(), 0) + 1);
 
             //先往栈中压入右节点，再压左节点，这样出栈就是先左节点后右节点了。
             if (printCount.getOrDefault(methodSig, 0) < 2) {
@@ -298,7 +305,7 @@ class CcInnerUtil {
             for (int i = 1; i < tree.deep; i++) {
                 sb.append("    ");
             }
-            System.out.printf("%5d %s%s\n", ci.getCaller().getLineNumber(), sb, ci.getCaller().getMethodInfo().getMethodSig());
+            System.out.printf("%5d %s%s\n", ci.getCaller().getLineNumber(), sb, ci.getCaller().getMethodInfo().getMethodSignature());
         }
     }
 

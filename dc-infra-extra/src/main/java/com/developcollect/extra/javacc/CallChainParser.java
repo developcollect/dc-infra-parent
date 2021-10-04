@@ -22,16 +22,20 @@ public class CallChainParser {
     private List<Predicate<CallInfo>> filters;
 
 
-
     public CallChainParser(BcelClassLoader bcelClassLoader) {
         this.bcelClassLoader = bcelClassLoader;
         this.filters = new ArrayList<>();
     }
 
     public CallInfo parse(String className, String methodName, Type... argTypes) {
-        CallInfo ci = new CallInfo(CallInfo.Call.of(className, methodName, argTypes));
+        return doParse(new CallInfo(CallInfo.Call.of(className, methodName, argTypes)));
+    }
 
+    public CallInfo parse(JavaClass javaClass, Method method) {
+        return doParse(new CallInfo(CallInfo.Call.of(javaClass, method)));
+    }
 
+    private CallInfo doParse(CallInfo ci) {
         Queue<CallInfo> queue = new LinkedList<>();
         queue.offer(ci);
 
@@ -45,15 +49,14 @@ public class CallChainParser {
             parseCallInfo(tree);
 
             for (CallInfo child : tree.getCalleeList()) {
-                if (callInfoMap.containsKey(child.getCaller().getMethodInfo().getMethodSig())) {
+                if (callInfoMap.containsKey(child.getCaller().getMethodInfo().getMethodSignature())) {
                     continue;
                 }
                 queue.offer(child);
             }
 
-            callInfoMap.put(tree.getCaller().getMethodInfo().getMethodSig(), tree);
+            callInfoMap.put(tree.getCaller().getMethodInfo().getMethodSignature(), tree);
         }
-
 
         return ci;
     }
@@ -68,7 +71,7 @@ public class CallChainParser {
     }
 
     private void parseCallInfo(CallInfo ci) {
-        CallInfo existCallInfo = callInfoMap.get(ci.getCaller().getMethodInfo().getMethodSig());
+        CallInfo existCallInfo = callInfoMap.get(ci.getCaller().getMethodInfo().getMethodSignature());
         if (existCallInfo != null) {
             ci.setCalleeList(existCallInfo.getCalleeList());
             return;
