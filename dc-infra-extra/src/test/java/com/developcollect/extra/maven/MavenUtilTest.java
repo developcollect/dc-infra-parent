@@ -13,4 +13,9 @@ public class MavenUtilTest {
         System.out.println(ps);
     }
 
+
+    @Test
+    public void test_findMavenHome() {
+        System.out.println(MavenUtil.findMavenHome());
+    }
 }

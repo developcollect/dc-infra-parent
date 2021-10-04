@@ -6,12 +6,9 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public abstract class AbstractIdTree<T extends AbstractIdTree<T, ID>, ID extends Serializable> implements IdTree<T, ID> {
+public abstract class AbstractTree<T extends AbstractTree<T>> implements ITree<T> {
 
-    protected ID id;
     protected T parent;
     protected List<T> children;
-
-
 
 }

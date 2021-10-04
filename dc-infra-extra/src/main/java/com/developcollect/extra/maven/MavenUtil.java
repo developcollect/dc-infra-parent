@@ -1,8 +1,11 @@
 package com.developcollect.extra.maven;
 
+import cn.hutool.core.exceptions.UtilException;
+import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
 import com.developcollect.core.utils.FileUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.maven.shared.invoker.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -19,15 +22,20 @@ public class MavenUtil {
 
     private static final String POM_FILENAME = "pom.xml";
 
+    static {
+        findMavenHome();
+    }
+
     /**
      * 分析项目模块结构
+     *
      * @param projectDir 项目顶级目录
      * @return 项目模块结构，无法解析时返回null
      */
     public static ProjectStructure analysisProject(String projectDir) {
         File pomFile = locatePom(new File(projectDir));
         if (pomFile == null) {
-            return null;
+            throw new IllegalArgumentException("无法定位pom文件：" + projectDir);
         }
 
         return analysisPom(null, pomFile);
@@ -51,6 +59,7 @@ public class MavenUtil {
 
     /**
      * 定位POM文件
+     *
      * @param projectDir 项目文件夹
      * @return pom文件，如果不存在返回null
      */
@@ -109,4 +118,53 @@ public class MavenUtil {
     }
 
 
+    public static InvocationResult mvn(String pomPath, String[] cmd) {
+        return mvn(pomPath, cmd, null, null);
+    }
+
+    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputAndErrorHandler) {
+        return mvn(pomPath, cmd, outputAndErrorHandler, outputAndErrorHandler);
+    }
+
+    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler, InvocationOutputHandler errorHandler)  {
+        InvocationRequest request = new DefaultInvocationRequest();
+        request.setPomFile(new File(pomPath));
+        request.setGoals(Arrays.asList(cmd));
+        request.addShellEnvironment("skip.test", "true");
+        Invoker invoker = new DefaultInvoker();
+        try {
+            if (outputHandler != null) {
+                invoker.setOutputHandler(outputHandler);
+            }
+            if (errorHandler != null) {
+                invoker.setErrorHandler(errorHandler);
+            }
+            InvocationResult invocationResult = invoker.execute(request);
+            return invocationResult;
+        } catch (MavenInvocationException e) {
+            throw new UtilException(e);
+        }
+
+    }
+
+
+
+    public static String findMavenHome() {
+        String mavenHome = System.getProperty("maven.home");
+        if (mavenHome != null) {
+            return mavenHome;
+        }
+
+        try {
+            List<String> strings = RuntimeUtil.execForLines("mvn", "-v");
+            for (String string : strings) {
+                if (string.startsWith("Maven home:")) {
+                    mavenHome = string.substring(11).trim();
+                    System.setProperty("maven.home", mavenHome);
+                }
+            }
+        } catch (Exception ignore) {
+        }
+        return null;
+    }
 }
