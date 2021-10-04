@@ -17,8 +17,6 @@ public class CallChainParser {
 
     private BcelClassLoader bcelClassLoader;
 
-    private Map<String, CallInfo> callInfoMap = new HashMap<>();
-
     private List<Predicate<CallInfo>> filters;
 
 
@@ -36,6 +34,7 @@ public class CallChainParser {
     }
 
     private CallInfo doParse(CallInfo ci) {
+        Map<String, CallInfo> callInfoMap = new HashMap<>();
         Queue<CallInfo> queue = new LinkedList<>();
         queue.offer(ci);
 
@@ -46,7 +45,7 @@ public class CallChainParser {
                 continue;
             }
 
-            parseCallInfo(tree);
+            parseCallInfo(tree, callInfoMap);
 
             for (CallInfo child : tree.getCalleeList()) {
                 if (callInfoMap.containsKey(child.getCaller().getMethodInfo().getMethodSignature())) {
@@ -62,6 +61,9 @@ public class CallChainParser {
     }
 
     private boolean filter(CallInfo callInfo) {
+        if (filters.isEmpty()) {
+            return true;
+        }
         for (Predicate<CallInfo> filter : filters) {
             if (filter.test(callInfo)) {
                 return true;
@@ -70,7 +72,7 @@ public class CallChainParser {
         return false;
     }
 
-    private void parseCallInfo(CallInfo ci) {
+    private void parseCallInfo(CallInfo ci, Map<String, CallInfo> callInfoMap) {
         CallInfo existCallInfo = callInfoMap.get(ci.getCaller().getMethodInfo().getMethodSignature());
         if (existCallInfo != null) {
             ci.setCalleeList(existCallInfo.getCalleeList());
@@ -172,6 +174,8 @@ public class CallChainParser {
 
 
     public void addFilter(Predicate<CallInfo> filter) {
-        this.filters.add(filter);
+        if (filter != null) {
+            this.filters.add(filter);
+        }
     }
 }
