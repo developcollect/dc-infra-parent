@@ -16,6 +16,8 @@
     <properties>
         <javacv.version>1.5.5</javacv.version>
         <javacv.ffmpeg.version>4.3.2-1.5.5</javacv.ffmpeg.version>
+
+        <bcel.version>6.5.0</bcel.version>
     </properties>
 
     <dependencies>
@@ -111,6 +113,13 @@
             <artifactId>jul-to-slf4j</artifactId>
             <version>${jul-to-slf4j.version}</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.bcel</groupId>
+            <artifactId>bcel</artifactId>
+            <version>${bcel.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

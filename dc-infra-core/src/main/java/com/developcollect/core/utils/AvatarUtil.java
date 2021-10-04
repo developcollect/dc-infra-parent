@@ -15,7 +15,18 @@ public class AvatarUtil {
     /**
      * 可以直接在<img/>标签或者浏览器地址栏预览的base64编码头
      */
-    public static final String BASE64_PREFIX = "data:image/png;base64,";
+    private static final String BASE64_PREFIX = "data:image/png;base64,";
+
+    /**
+     * 生成头像的base64编码，并且拼接html中img标签中src属性需要的头
+     * 可直接放到img标签使用
+     * <br>
+     *     例如：<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAABEklEQVR42u3dMQ0AMAhFwRrtgv8BB62NH7jhCYBbSTjd/TS3YwmABViABViABViAAWsdcN1SUIABAwYMGLAAC7AACzBgwIABAxZgARZgAQYMGDBgwIABC3DCwNvmBQwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGABBgwYMGDAgAELsAALsAADBgwYMGABFmABFmDAgAEDBmyp04HTSz/i830UMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgwYMGDAgAEDBgx4J7AAAxZgARZgARZgARbg4X3NFS7VSpcJjAAAAABJRU5ErkJggg=="/>
+     * @param id id
+     */
+    public static String createHtmlSrc(int id) {
+        return BASE64_PREFIX + createBase64(id);
+    }
 
     /**
      * 生成头像的base64编码
@@ -27,7 +38,7 @@ public class AvatarUtil {
 
     /**
      * 根据id生成一个头像，颜色随机。
-     * @param id
+     * @param id id
      */
     public static byte[] createBytes(int id)  {
         return ImgUtil.toBytes(createImg(id), "png");
@@ -35,7 +46,7 @@ public class AvatarUtil {
 
     /**
      * 根据id生成一个头像，颜色随机。
-     * @param id
+     * @param id id
      */
     public static BufferedImage createImg(int id)  {
         int width = 20;

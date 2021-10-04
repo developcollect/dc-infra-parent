@@ -34,4 +34,10 @@ public class AvatarUtilTest {
         BufferedImage img2 = AvatarUtil.createImg(-1409886);
         ImgUtil.write(img2, FileUtil.touch("~/tmp/" + -1409886 + ".png"));
     }
+
+    @Test
+    public void test_hh() {
+        String htmlSrc = AvatarUtil.createHtmlSrc(12344);
+        System.out.println(htmlSrc);
+    }
 }
