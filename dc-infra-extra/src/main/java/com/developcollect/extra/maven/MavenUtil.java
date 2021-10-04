@@ -118,15 +118,29 @@ public class MavenUtil {
     }
 
 
-    public static InvocationResult mvn(String pomPath, String[] cmd) {
+    public static InvocationResult mvn(String pomPath, String... cmd) {
         return mvn(pomPath, cmd, null, null);
+    }
+
+
+    public static InvocationResult mvnWithThrow(String pomPath, String... cmd) {
+        StringBuilder sb = new StringBuilder();
+        InvocationResult result = mvn(pomPath, cmd, line -> {
+            if (line.startsWith("[ERROR]")) {
+                sb.append("\n").append(line);
+            }
+        });
+        if (result.getExitCode() != 0) {
+            throw new UtilException("执行mvn命令异常：" + sb);
+        }
+        return result;
     }
 
     public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputAndErrorHandler) {
         return mvn(pomPath, cmd, outputAndErrorHandler, outputAndErrorHandler);
     }
 
-    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler, InvocationOutputHandler errorHandler)  {
+    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler, InvocationOutputHandler errorHandler) {
         InvocationRequest request = new DefaultInvocationRequest();
         request.setPomFile(new File(pomPath));
         request.setGoals(Arrays.asList(cmd));

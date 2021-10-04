@@ -37,8 +37,8 @@ public class CcUtil {
         ProjectStructure projectStructure = MavenUtil.analysisProject(mavenProjectDir);
 
         // 执行clear、compile命令，定位classes目录
-        InvocationResult invocationResult = MavenUtil.mvn(projectStructure.getPomPath(), new String[]{"clean", "compile"}, line -> {
-        });
+        InvocationResult invocationResult = MavenUtil.mvnWithThrow(projectStructure.getPomPath(), "clean", "compile");
+
         if (invocationResult.getExitCode() != 0) {
             throw new UtilException("执行【mvn clear compile】命令失败");
         }

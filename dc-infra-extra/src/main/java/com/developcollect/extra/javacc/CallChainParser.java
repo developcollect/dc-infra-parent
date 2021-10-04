@@ -133,8 +133,6 @@ public class CallChainParser {
         } else {
             if (ii instanceof INVOKEINTERFACE) {
                 // todo 识别接口调用
-
-                System.out.println("INVOKEINTERFACE");
             }
 
             ConstantPoolGen cp = mg.getConstantPool();
