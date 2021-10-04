@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
  *
  * @author Zhu Kaixiao
  * @date 2019/5/21 14:49
+ * @deprecated 新的工具类 {@link com.developcollect.extra.javacv.MediaUtil}
  **/
 @Deprecated
 public class MediaUtil {
