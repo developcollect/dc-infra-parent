@@ -3,6 +3,7 @@ package com.developcollect.extra.maven;
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
+import com.developcollect.core.utils.ArrayUtil;
 import com.developcollect.core.utils.FileUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.shared.invoker.*;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 
@@ -119,7 +121,7 @@ public class MavenUtil {
 
 
     public static InvocationResult mvn(String pomPath, String... cmd) {
-        return mvn(pomPath, cmd, null, null);
+        return mvn(pomPath, cmd, null);
     }
 
 
@@ -130,37 +132,50 @@ public class MavenUtil {
                 sb.append("\n").append(line);
             }
         });
+        if (result.getExecutionException() != null) {
+            throw new UtilException(result.getExecutionException());
+        }
         if (result.getExitCode() != 0) {
-            throw new UtilException("执行mvn命令异常：" + sb);
+            throw new UtilException("执行mvn命令【mvn " + ArrayUtil.join(cmd, " ") + "】异常：" + sb);
         }
         return result;
     }
 
-    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputAndErrorHandler) {
-        return mvn(pomPath, cmd, outputAndErrorHandler, outputAndErrorHandler);
-    }
 
-    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler, InvocationOutputHandler errorHandler) {
-        InvocationRequest request = new DefaultInvocationRequest();
-        request.setPomFile(new File(pomPath));
-        request.setGoals(Arrays.asList(cmd));
-        request.addShellEnvironment("skip.test", "true");
-        Invoker invoker = new DefaultInvoker();
-        try {
+    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler) {
+        return mvn(pomPath, cmd, request -> {
+        }, invoker -> {
             if (outputHandler != null) {
                 invoker.setOutputHandler(outputHandler);
             }
-            if (errorHandler != null) {
-                invoker.setErrorHandler(errorHandler);
-            }
-            InvocationResult invocationResult = invoker.execute(request);
-            return invocationResult;
-        } catch (MavenInvocationException e) {
-            throw new UtilException(e);
-        }
+        });
 
     }
 
+
+    public static InvocationResult mvn(String pomPath, String[] cmd, Consumer<InvocationRequest> requestHook, Consumer<Invoker> invokerHook) {
+        InvocationRequest request = new DefaultInvocationRequest();
+        // 设置pom文件
+        request.setPomFile(new File(pomPath));
+        // 设置goals
+        request.setGoals(Arrays.asList(cmd));
+        // 设置为非交互模式
+        request.setBatchMode(true);
+        // 设置跳过单元测试
+        request.setMavenOpts("-Dmaven.test.skip=true");
+        // 安静模式，不输出IFNO，但会输出ERROR
+//        request.setQuiet(true);
+
+        requestHook.accept(request);
+
+        Invoker invoker = new DefaultInvoker();
+        invokerHook.accept(invoker);
+        try {
+            return invoker.execute(request);
+        } catch (MavenInvocationException e) {
+            throw new UtilException(e);
+        }
+    }
 
 
     public static String findMavenHome() {

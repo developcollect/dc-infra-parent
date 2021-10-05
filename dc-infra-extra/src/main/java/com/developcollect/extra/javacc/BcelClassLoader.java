@@ -18,6 +18,9 @@ import java.util.jar.JarFile;
 @Slf4j
 public class BcelClassLoader {
 
+    /**
+     * classPath，支持文件夹和jar包两个形式
+     */
     private String[] classPaths;
 
     public BcelClassLoader(String[] classPaths) {

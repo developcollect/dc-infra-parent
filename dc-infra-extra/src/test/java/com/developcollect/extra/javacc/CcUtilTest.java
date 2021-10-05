@@ -9,6 +9,13 @@ import java.util.Map;
 
 public class CcUtilTest {
 
+    private void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
+        for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
+            System.out.println(entry.getKey());
+            CcInnerUtil.printCallInfo(entry.getValue());
+            System.out.println("\n\n");
+        }
+    }
 
     @Test
     public void test2a() {
@@ -29,11 +36,20 @@ public class CcUtilTest {
             return false;
         });
 
-        for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
-            System.out.println(entry.getKey());
-            CcInnerUtil.printCallInfo(entry.getValue());
-            System.out.println("\n\n");
-        }
+        printChainMap(chainMap);
     }
+
+
+    @Test
+    public void testf1() {
+        Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain("/Volumes/D2/code/java-projects/first", cm -> {
+            JavaClass javaClass = cm.getJavaClass();
+            Method method = cm.getMethod();
+            return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f1");
+        });
+
+        printChainMap(chainMap);
+    }
+
 
 }

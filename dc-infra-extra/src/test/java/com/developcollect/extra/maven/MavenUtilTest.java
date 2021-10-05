@@ -20,6 +20,18 @@ public class MavenUtilTest {
 
     @Test
     public void test_error() {
-        MavenUtil.mvnWithThrow("/Volumes/D2/code/java-projects/dc-infra-parent", "haahah");
+        MavenUtil.mvnWithThrow("/Volumes/D2/code/java-projects/dc-infra-parent", "cclean", "compile");
+    }
+
+
+    @Test
+    public void test_clean() {
+        MavenUtil.mvn("/Volumes/D2/code/java-projects/dc-infra-parent", "clean");
+    }
+
+
+    @Test
+    public void test_package() {
+        MavenUtil.mvn("/Volumes/D2/code/java-projects/first", "package");
     }
 }

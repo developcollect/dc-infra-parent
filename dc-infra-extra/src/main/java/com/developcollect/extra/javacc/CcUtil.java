@@ -1,12 +1,10 @@
 package com.developcollect.extra.javacc;
 
 
-import cn.hutool.core.exceptions.UtilException;
 import com.developcollect.core.tree.TreeUtil;
 import com.developcollect.extra.maven.MavenUtil;
 import com.developcollect.extra.maven.ProjectStructure;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.maven.shared.invoker.InvocationResult;
 
 import java.util.List;
 import java.util.Map;
@@ -37,11 +35,7 @@ public class CcUtil {
         ProjectStructure projectStructure = MavenUtil.analysisProject(mavenProjectDir);
 
         // 执行clear、compile命令，定位classes目录
-        InvocationResult invocationResult = MavenUtil.mvnWithThrow(projectStructure.getPomPath(), "clean", "compile");
-
-        if (invocationResult.getExitCode() != 0) {
-            throw new UtilException("执行【mvn clear compile】命令失败");
-        }
+        MavenUtil.mvnWithThrow(projectStructure.getPomPath(), "clean", "compile");
 
         // 定位classes目录
         String[] classPaths = collectClassPaths(projectStructure);
