@@ -15,10 +15,10 @@ import java.util.function.Predicate;
 @Slf4j
 public class CallChainParser {
 
-
     private ListableClassPathRepository repository;
-
     private List<Predicate<CallInfo>> filters;
+
+    private ThreadLocal<Map<String, CallInfo>> callInfoCacheThreadLocal = new ThreadLocal<>();
 
 
     public CallChainParser(ListableClassPathRepository repository) {
@@ -35,31 +35,40 @@ public class CallChainParser {
     }
 
     private CallInfo doParse(CallInfo ci) {
-        // 这个map用来识别递归
-        Map<String, CallInfo> callInfoMap = new HashMap<>(128);
-        Queue<CallInfo> queue = new LinkedList<>();
-        queue.offer(ci);
-
-        while (!queue.isEmpty()) {
-            CallInfo tree = queue.poll();
-
-            if (!filter(tree)) {
-                continue;
+        try {
+            Map<String, CallInfo> callInfoMap = callInfoCacheThreadLocal.get();
+            // 这个map用来识别递归
+            if (callInfoMap == null) {
+                callInfoMap = new HashMap<>(128);
+                callInfoCacheThreadLocal.set(callInfoMap);
             }
 
-            parseCallInfo(tree, callInfoMap);
 
-            for (CallInfo child : tree.getCalleeList()) {
-                // 不为空，说明已经解析过了
-                if (CollUtil.isNotEmpty(child.getCalleeList())) {
+            Queue<CallInfo> queue = new LinkedList<>();
+            queue.offer(ci);
+
+            while (!queue.isEmpty()) {
+                CallInfo tree = queue.poll();
+
+                if (!filter(tree)) {
                     continue;
                 }
-                queue.offer(child);
+
+                parseCallInfo(tree, callInfoMap);
+
+                for (CallInfo child : tree.getCalleeList()) {
+                    // 不为空，说明已经解析过了
+                    if (CollUtil.isNotEmpty(child.getCalleeList())) {
+                        continue;
+                    }
+                    queue.offer(child);
+                }
+
+                callInfoMap.put(tree.getCaller().getMethodInfo().getMethodSignature(), tree);
             }
-
-            callInfoMap.put(tree.getCaller().getMethodInfo().getMethodSignature(), tree);
+        } finally {
+            callInfoCacheThreadLocal.remove();
         }
-
         return ci;
     }
 
@@ -134,11 +143,7 @@ public class CallChainParser {
         if (ii instanceof INVOKEDYNAMIC) {
             addDynamicCallee(ci, sourceLine, javaClass, mg, (INVOKEDYNAMIC) ii);
         } else {
-            if (ii instanceof INVOKEINTERFACE) {
-                // todo 识别接口调用
-                // 查找实现类，获取方法实现
-                System.out.println("  ==>  " + mg.getName());
-            }
+
 
             ConstantPoolGen cp = mg.getConstantPool();
             String referenceTypeName = ii.getReferenceType(cp).toString();
@@ -147,28 +152,51 @@ public class CallChainParser {
             MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
             boolean skipRawMethodInfo = false;
 
-            if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
-                // 如果是匿名内部类
-                if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
-                    //
+            if (ii instanceof INVOKEINTERFACE) {
+                CallInfo callInfo = new CallInfo(new CallInfo.Call(sourceLine, methodInfo));
+                ci.addCallee(callInfo);
+
+                // todo 识别接口调用
+                // 查找实现类，获取方法实现
+                JavaClass referenceJavaClass = repository.loadClass(referenceTypeName);
+                List<JavaClass> implClassList = repository.getSubClassList(referenceJavaClass);
+                if (!implClassList.isEmpty()) {
+                    System.out.println("R ==> " + referenceTypeName);
+                    for (JavaClass aClass : implClassList) {
+                        System.out.println("IM  ==>  " + aClass.getClassName());
+                    }
+                    System.out.println();
+
+                    JavaClass implClass = implClassList.get(0);
+                    CallInfo implCallInfo = parse(implClass, CcInnerUtil.getMethod(implClass, invokeMethodName, argumentTypes));
+                    implCallInfo.getCaller().setLineNumber(sourceLine);
+                    callInfo.addCallee(implCallInfo);
+                }
+            } else {
+                if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
+                    // 如果是匿名内部类
+                    if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
+                        //
 //                把调用加到当前的信息中
-                    JavaClass iaClass = repository.loadClass(referenceTypeName);
-                    for (Method method : iaClass.getMethods()) {
-                        CallInfo info = parse(iaClass, method);
-                        // todo 拿方法真正定义的行号
-                        info.getCaller().setLineNumber(sourceLine);
-                        ci.addCallee(info);
-                        skipRawMethodInfo = true;
+                        JavaClass iaClass = repository.loadClass(referenceTypeName);
+                        for (Method method : iaClass.getMethods()) {
+                            CallInfo info = parse(iaClass, method);
+                            // todo 拿方法真正定义的行号
+                            info.getCaller().setLineNumber(sourceLine);
+                            ci.addCallee(info);
+                            skipRawMethodInfo = true;
+                        }
                     }
                 }
-            }
 
-            if (skipRawMethodInfo) {
-                return;
+                if (skipRawMethodInfo) {
+                    return;
+                }
+                ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
             }
-            ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
         }
     }
+
 
     private void addDynamicCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, INVOKEDYNAMIC invokeDynamic) {
         ConstantPoolGen cp = mg.getConstantPool();

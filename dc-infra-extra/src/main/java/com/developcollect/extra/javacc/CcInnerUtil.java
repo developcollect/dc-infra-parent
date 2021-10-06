@@ -319,6 +319,34 @@ class CcInnerUtil {
         return classFileName;
     }
 
+    public static List<JavaClass> getImplClassList(ListableClassPathRepository repository, String interfaceName) throws ClassNotFoundException {
+        JavaClass javaClass = repository.loadClass(interfaceName);
+        return repository.scanClasses(jc -> {
+            // 排除自身
+            if (jc.getClassName().equals(interfaceName)) {
+                return false;
+            }
+
+            // 获取所有实现的接口，进行比对
+            try {
+                return jc.implementationOf(javaClass);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        });
+    }
+
+    public static Method getMethod(JavaClass javaClass, String methodName, Type[] argumentTypes) {
+        for (Method m : javaClass.getMethods()) {
+            if (m.getName().equals(methodName) && argumentList(argumentTypes).equals(argumentList(m.getArgumentTypes()))) {
+                return m;
+            }
+        }
+
+        return null;
+    }
 
 
     private static class DeepWrapper<T> {
