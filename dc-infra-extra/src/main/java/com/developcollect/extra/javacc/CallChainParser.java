@@ -142,61 +142,41 @@ public class CallChainParser {
     private void addCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, InvokeInstruction ii) throws ClassNotFoundException {
         if (ii instanceof INVOKEDYNAMIC) {
             addDynamicCallee(ci, sourceLine, javaClass, mg, (INVOKEDYNAMIC) ii);
+        } else if (ii instanceof INVOKEINTERFACE) {
+            addInterfaceCallee(ci, sourceLine, javaClass, mg, (INVOKEINTERFACE) ii);
         } else {
-
-
-            ConstantPoolGen cp = mg.getConstantPool();
-            String referenceTypeName = ii.getReferenceType(cp).toString();
-            String invokeMethodName = ii.getMethodName(cp);
-            Type[] argumentTypes = ii.getArgumentTypes(cp);
-            MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
-            boolean skipRawMethodInfo = false;
-
-            if (ii instanceof INVOKEINTERFACE) {
-                CallInfo callInfo = new CallInfo(new CallInfo.Call(sourceLine, methodInfo));
-                ci.addCallee(callInfo);
-
-                // todo 识别接口调用
-                // 查找实现类，获取方法实现
-                JavaClass referenceJavaClass = repository.loadClass(referenceTypeName);
-                List<JavaClass> implClassList = repository.getSubClassList(referenceJavaClass);
-                if (!implClassList.isEmpty()) {
-                    System.out.println("R ==> " + referenceTypeName);
-                    for (JavaClass aClass : implClassList) {
-                        System.out.println("IM  ==>  " + aClass.getClassName());
-                    }
-                    System.out.println();
-
-                    JavaClass implClass = implClassList.get(0);
-                    CallInfo implCallInfo = parse(implClass, CcInnerUtil.getMethod(implClass, invokeMethodName, argumentTypes));
-                    implCallInfo.getCaller().setLineNumber(sourceLine);
-                    callInfo.addCallee(implCallInfo);
-                }
-            } else {
-                if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
-                    // 如果是匿名内部类
-                    if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
-                        //
-//                把调用加到当前的信息中
-                        JavaClass iaClass = repository.loadClass(referenceTypeName);
-                        for (Method method : iaClass.getMethods()) {
-                            CallInfo info = parse(iaClass, method);
-                            // todo 拿方法真正定义的行号
-                            info.getCaller().setLineNumber(sourceLine);
-                            ci.addCallee(info);
-                            skipRawMethodInfo = true;
-                        }
-                    }
-                }
-
-                if (skipRawMethodInfo) {
-                    return;
-                }
-                ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
-            }
+            addDefaultCallee(ci, sourceLine, javaClass, mg, ii);
         }
     }
 
+
+    private void addInterfaceCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, INVOKEINTERFACE invokeInterface) throws ClassNotFoundException {
+        ConstantPoolGen cp = mg.getConstantPool();
+        String referenceTypeName = invokeInterface.getReferenceType(cp).toString();
+        String invokeMethodName = invokeInterface.getMethodName(cp);
+        Type[] argumentTypes = invokeInterface.getArgumentTypes(cp);
+        MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
+
+        CallInfo callInfo = new CallInfo(new CallInfo.Call(sourceLine, methodInfo));
+        ci.addCallee(callInfo);
+
+        // todo 识别接口调用
+        // 查找实现类，获取方法实现
+        JavaClass referenceJavaClass = repository.loadClass(referenceTypeName);
+        List<JavaClass> implClassList = repository.getSubClassList(referenceJavaClass);
+        if (!implClassList.isEmpty()) {
+            System.out.println("R ==> " + referenceTypeName);
+            for (JavaClass aClass : implClassList) {
+                System.out.println("IM  ==>  " + aClass.getClassName());
+            }
+            System.out.println();
+
+            JavaClass implClass = implClassList.get(0);
+            CallInfo implCallInfo = new CallInfo(CallInfo.Call.of(implClass.getClassName(), invokeMethodName, argumentTypes));
+            implCallInfo.getCaller().setLineNumber(sourceLine);
+            callInfo.addCallee(implCallInfo);
+        }
+    }
 
     private void addDynamicCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, INVOKEDYNAMIC invokeDynamic) {
         ConstantPoolGen cp = mg.getConstantPool();
@@ -223,6 +203,33 @@ public class CallChainParser {
         ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, bootstrapMethodMethod)));
     }
 
+    private void addDefaultCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, InvokeInstruction ii) throws ClassNotFoundException {
+        ConstantPoolGen cp = mg.getConstantPool();
+        String referenceTypeName = ii.getReferenceType(cp).toString();
+        String invokeMethodName = ii.getMethodName(cp);
+        Type[] argumentTypes = ii.getArgumentTypes(cp);
+        MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
+        boolean skipRawMethodInfo = false;
+
+        if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
+            // 如果是匿名内部类
+            if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
+                // 把调用加到当前的信息中
+                JavaClass iaClass = repository.loadClass(referenceTypeName);
+                for (Method method : iaClass.getMethods()) {
+                    CallInfo info = new CallInfo(CallInfo.Call.of(iaClass, method));
+                    // todo 拿方法真正定义的行号
+                    info.getCaller().setLineNumber(sourceLine);
+                    ci.addCallee(info);
+                    skipRawMethodInfo = true;
+                }
+            }
+        }
+
+        if (!skipRawMethodInfo) {
+            ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
+        }
+    }
 
     public void addFilter(Predicate<CallInfo> filter) {
         if (filter != null) {
