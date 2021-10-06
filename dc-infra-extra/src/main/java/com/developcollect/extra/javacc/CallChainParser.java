@@ -1,6 +1,8 @@
 package com.developcollect.extra.javacc;
 
 
+import com.developcollect.core.utils.CollUtil;
+import com.developcollect.core.utils.LambdaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -15,6 +17,7 @@ import java.util.function.Predicate;
 public class CallChainParser {
 
     private ListableClassPathRepository repository;
+    private SubClassScanner subClassScanner;
     private List<Predicate<CallInfo>> filters;
 
     private ThreadLocal<Map<String, CallInfo>> callInfoCacheThreadLocal = new ThreadLocal<>();
@@ -23,6 +26,7 @@ public class CallChainParser {
     public CallChainParser(ListableClassPathRepository repository) {
         this.repository = repository;
         this.filters = new ArrayList<>();
+        this.subClassScanner = defaultSubClassScanner();
     }
 
     public CallInfo parse(String className, String methodName, Type... argTypes) {
@@ -56,9 +60,19 @@ public class CallChainParser {
                 parseCallInfo(tree, callInfoMap);
 
                 for (CallInfo child : tree.getCalleeList()) {
-                    if (!child.isInterface() && !child.getCalleeList().isEmpty()) {
-                        continue;
+                    // 如果是接口，并且CalleeList是空的(没有找到实现类)，直接忽略
+                    if (child.isInterface()) {
+                        if (CollUtil.isEmpty(child.getCalleeList())) {
+                            continue;
+                        }
                     }
+                    // 如果不是接口，并且CalleeList不是空的(已经解析过了)，直接忽略
+                    else {
+                        if (CollUtil.isNotEmpty(child.getCalleeList())) {
+                            continue;
+                        }
+                    }
+
                     queue.offer(child);
                 }
 
@@ -163,12 +177,13 @@ public class CallChainParser {
         // 识别接口调用
         // 查找实现类，获取方法实现
         JavaClass referenceJavaClass = repository.loadClass(referenceTypeName);
-        List<JavaClass> implClassList = repository.getSubClassList(referenceJavaClass);
-        for (JavaClass implClass : implClassList) {
-            CallInfo implCallInfo = CallInfo.of(implClass.getClassName(), invokeMethodName, argumentTypes);
-            ;
-            implCallInfo.getCaller().setLineNumber(sourceLine);
-            interCallInfo.addCallee(implCallInfo);
+        List<JavaClass> implClassList = subClassScanner.scan(repository, referenceJavaClass);
+        if (CollUtil.isNotEmpty(implClassList)) {
+            for (JavaClass implClass : implClassList) {
+                CallInfo implCallInfo = CallInfo.of(implClass.getClassName(), invokeMethodName, argumentTypes);
+                implCallInfo.getCaller().setLineNumber(sourceLine);
+                interCallInfo.addCallee(implCallInfo);
+            }
         }
 
     }
@@ -231,5 +246,21 @@ public class CallChainParser {
         if (filter != null) {
             this.filters.add(filter);
         }
+    }
+
+
+    public static SubClassScanner defaultSubClassScanner() {
+        return (repository, superClass) -> {
+            try {
+                return repository.getSubClassList(superClass);
+            } catch (ClassNotFoundException e) {
+                return LambdaUtil.raise(e);
+            }
+        };
+    }
+
+    @FunctionalInterface
+    public interface SubClassScanner {
+        List<JavaClass> scan(ListableClassPathRepository repository, JavaClass superClass);
     }
 }
