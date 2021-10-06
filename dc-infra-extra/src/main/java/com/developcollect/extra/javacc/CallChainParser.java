@@ -16,13 +16,13 @@ import java.util.function.Predicate;
 public class CallChainParser {
 
 
-    private BcelClassLoader bcelClassLoader;
+    private ListableClassPathRepository repository;
 
     private List<Predicate<CallInfo>> filters;
 
 
-    public CallChainParser(BcelClassLoader bcelClassLoader) {
-        this.bcelClassLoader = bcelClassLoader;
+    public CallChainParser(ListableClassPathRepository repository) {
+        this.repository = repository;
         this.filters = new ArrayList<>();
     }
 
@@ -88,24 +88,24 @@ public class CallChainParser {
         String callerClassName = callerMethodInfo.getClassName();
 
         try {
-            JavaClass javaClass = bcelClassLoader.getJavaClass(callerClassName);
+            JavaClass javaClass = repository.loadClass(callerClassName);
             Method method = CcInnerUtil.findMethod(javaClass, callerMethodInfo.getMethodName(), callerMethodInfo.getArgumentTypes());
 
             parseCallInfo(ci, javaClass, method);
-        } catch (Exception e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             // 类文件不存在时忽略
         }
     }
 
 
-
     /**
      * 解析指定方法的调用信息，不下钻解析
+     *
      * @param javaClass 类型信息
-     * @param method 方法信息
+     * @param method    方法信息
      * @return 调用信息
      */
-    private void parseCallInfo(CallInfo ci, JavaClass javaClass, Method method) {
+    private void parseCallInfo(CallInfo ci, JavaClass javaClass, Method method) throws ClassNotFoundException {
         ConstantPoolGen constantPool = new ConstantPoolGen(javaClass.getConstantPool());
         MethodGen mg = new MethodGen(method, javaClass.getClassName(), constantPool);
         if (mg.isAbstract() || mg.isNative()) {
@@ -130,12 +130,14 @@ public class CallChainParser {
         }
     }
 
-    private void addCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, InvokeInstruction ii) {
+    private void addCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, InvokeInstruction ii) throws ClassNotFoundException {
         if (ii instanceof INVOKEDYNAMIC) {
             addDynamicCallee(ci, sourceLine, javaClass, mg, (INVOKEDYNAMIC) ii);
         } else {
             if (ii instanceof INVOKEINTERFACE) {
                 // todo 识别接口调用
+                // 查找实现类，获取方法实现
+                System.out.println("  ==>  " + mg.getName());
             }
 
             ConstantPoolGen cp = mg.getConstantPool();
@@ -150,7 +152,7 @@ public class CallChainParser {
                 if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
                     //
 //                把调用加到当前的信息中
-                    JavaClass iaClass = bcelClassLoader.getJavaClass(referenceTypeName);
+                    JavaClass iaClass = repository.loadClass(referenceTypeName);
                     for (Method method : iaClass.getMethods()) {
                         CallInfo info = parse(iaClass, method);
                         // todo 拿方法真正定义的行号

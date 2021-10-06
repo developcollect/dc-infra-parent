@@ -43,13 +43,14 @@ public class CcUtil {
         return parseChain(classPaths, scanFilter, parseFilter);
     }
 
-    public static Map<ClassAndMethod, CallInfo> parseChain(String[] classPaths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter) {
+    public static Map<ClassAndMethod, CallInfo> parseChain(String[] paths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter) {
         // 扫描类，定位需要解析的类和方法
-        BcelClassLoader bcelClassLoader = new BcelClassLoader(classPaths);
-        List<ClassAndMethod> classAndMethods = bcelClassLoader.scanMethods(scanFilter);
+        ListableClassPathRepository repository = new ListableClassPathRepository(paths);
+
+        List<ClassAndMethod> classAndMethods = repository.scanMethods(scanFilter);
 
         // 执行解析
-        CallChainParser parser = new CallChainParser(bcelClassLoader);
+        CallChainParser parser = new CallChainParser(repository);
         if (parseFilter != null) {
             parser.addFilter(parseFilter);
         }

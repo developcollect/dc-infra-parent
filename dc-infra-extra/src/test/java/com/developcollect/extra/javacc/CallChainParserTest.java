@@ -1,6 +1,5 @@
 package com.developcollect.extra.javacc;
 
-import com.developcollect.core.utils.StreamUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,20 +10,19 @@ import java.util.List;
 import java.util.Queue;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
-
 public class CallChainParserTest {
 
     CallChainParser parser;
 
     @Before
     public void init() {
-        BcelClassLoader bcelClassLoader = new BcelClassLoader(new String[]{
+
+        ListableClassPathRepository repository = new ListableClassPathRepository(new String[]{
 //                "/Volumes/D2/code/java-projects/first/target/first-1.0-SNAPSHOT.jar",
                 "/Volumes/D2/code/java-projects/first/target/classes",
                 "/Volumes/D2/.m2/repository/cn/hutool/hutool-all/5.7.13/hutool-all-5.7.13.jar"
         });
-        parser = new CallChainParser(bcelClassLoader);
+        parser = new CallChainParser(repository);
         parser.addFilter(callInfo -> {
             CallInfo.Call caller = callInfo.getCaller();
             MethodInfo methodInfo = caller.getMethodInfo();

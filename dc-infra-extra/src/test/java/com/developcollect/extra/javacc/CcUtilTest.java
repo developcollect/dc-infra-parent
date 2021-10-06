@@ -61,4 +61,16 @@ public class CcUtilTest {
 
         printChainMap(chainMap);
     }
+
+
+    @Test
+    public void testf33() {
+        Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain("/Volumes/D2/code/java-projects/first", cm -> {
+            JavaClass javaClass = cm.getJavaClass();
+            Method method = cm.getMethod();
+            return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f33");
+        });
+
+        printChainMap(chainMap);
+    }
 }
