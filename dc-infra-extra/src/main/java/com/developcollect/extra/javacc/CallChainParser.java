@@ -1,7 +1,6 @@
 package com.developcollect.extra.javacc;
 
 
-import com.developcollect.core.utils.CollUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -27,11 +26,11 @@ public class CallChainParser {
     }
 
     public CallInfo parse(String className, String methodName, Type... argTypes) {
-        return doParse(new CallInfo(CallInfo.Call.of(className, methodName, argTypes)));
+        return doParse(CallInfo.of(className, methodName, argTypes));
     }
 
     public CallInfo parse(JavaClass javaClass, Method method) {
-        return doParse(new CallInfo(CallInfo.Call.of(javaClass, method)));
+        return doParse(CallInfo.of(javaClass, method));
     }
 
     private CallInfo doParse(CallInfo ci) {
@@ -57,14 +56,13 @@ public class CallChainParser {
                 parseCallInfo(tree, callInfoMap);
 
                 for (CallInfo child : tree.getCalleeList()) {
-                    // 不为空，说明已经解析过了
-                    if (CollUtil.isNotEmpty(child.getCalleeList())) {
+                    if (!child.isInterface() && !child.getCalleeList().isEmpty()) {
                         continue;
                     }
                     queue.offer(child);
                 }
 
-                callInfoMap.put(tree.getCaller().getMethodInfo().getMethodSignature(), tree);
+                callInfoMap.put(tree.getCallerSignature(), tree);
             }
         } finally {
             callInfoCacheThreadLocal.remove();
@@ -157,25 +155,22 @@ public class CallChainParser {
         Type[] argumentTypes = invokeInterface.getArgumentTypes(cp);
         MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
 
-        CallInfo callInfo = new CallInfo(new CallInfo.Call(sourceLine, methodInfo));
-        ci.addCallee(callInfo);
 
-        // todo 识别接口调用
+        CallInfo interCallInfo = CallInfo.of(new CallInfo.Call(sourceLine, methodInfo));
+        interCallInfo.setInterface(true);
+        ci.addCallee(interCallInfo);
+
+        // 识别接口调用
         // 查找实现类，获取方法实现
         JavaClass referenceJavaClass = repository.loadClass(referenceTypeName);
         List<JavaClass> implClassList = repository.getSubClassList(referenceJavaClass);
-        if (!implClassList.isEmpty()) {
-            System.out.println("R ==> " + referenceTypeName);
-            for (JavaClass aClass : implClassList) {
-                System.out.println("IM  ==>  " + aClass.getClassName());
-            }
-            System.out.println();
-
-            JavaClass implClass = implClassList.get(0);
-            CallInfo implCallInfo = new CallInfo(CallInfo.Call.of(implClass.getClassName(), invokeMethodName, argumentTypes));
+        for (JavaClass implClass : implClassList) {
+            CallInfo implCallInfo = CallInfo.of(implClass.getClassName(), invokeMethodName, argumentTypes);
+            ;
             implCallInfo.getCaller().setLineNumber(sourceLine);
-            callInfo.addCallee(implCallInfo);
+            interCallInfo.addCallee(implCallInfo);
         }
+
     }
 
     private void addDynamicCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, INVOKEDYNAMIC invokeDynamic) {
@@ -200,7 +195,8 @@ public class CallChainParser {
             throw new RuntimeException("### 无法找到bootstrapMethod的方法信息 " + javaClass.getClassName() + " " + bootstrapMethod);
         }
 
-        ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, bootstrapMethodMethod)));
+
+        ci.addCallee(CallInfo.of(new CallInfo.Call(sourceLine, bootstrapMethodMethod)));
     }
 
     private void addDefaultCallee(CallInfo ci, int sourceLine, JavaClass javaClass, MethodGen mg, InvokeInstruction ii) throws ClassNotFoundException {
@@ -217,7 +213,7 @@ public class CallChainParser {
                 // 把调用加到当前的信息中
                 JavaClass iaClass = repository.loadClass(referenceTypeName);
                 for (Method method : iaClass.getMethods()) {
-                    CallInfo info = new CallInfo(CallInfo.Call.of(iaClass, method));
+                    CallInfo info = CallInfo.of(iaClass, method);
                     // todo 拿方法真正定义的行号
                     info.getCaller().setLineNumber(sourceLine);
                     ci.addCallee(info);
@@ -227,7 +223,7 @@ public class CallChainParser {
         }
 
         if (!skipRawMethodInfo) {
-            ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
+            ci.addCallee(CallInfo.of(new CallInfo.Call(sourceLine, methodInfo)));
         }
     }
 

@@ -55,7 +55,6 @@ public class CcUtilTest {
     public void test_TestEntry() {
         Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain("/Volumes/D2/code/java-projects/first", cm -> {
             JavaClass javaClass = cm.getJavaClass();
-            Method method = cm.getMethod();
             return javaClass.getClassName().equals("org.example.TestEntry");
         });
 
@@ -69,6 +68,11 @@ public class CcUtilTest {
             JavaClass javaClass = cm.getJavaClass();
             Method method = cm.getMethod();
             return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f33");
+        }, callInfo -> {
+            CallInfo.Call caller = callInfo.getCaller();
+            MethodInfo methodInfo = caller.getMethodInfo();
+            String callerClassName = methodInfo.getClassName();
+            return callerClassName.startsWith("org.example");
         });
 
         printChainMap(chainMap);
