@@ -11,7 +11,6 @@ public class CcUtilTest {
 
     private void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
         for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
-            System.out.println(entry.getKey());
             CcInnerUtil.printCallInfo(entry.getValue());
             System.out.println("\n\n");
         }
@@ -52,4 +51,14 @@ public class CcUtilTest {
     }
 
 
+    @Test
+    public void test_TestEntry() {
+        Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain("/Volumes/D2/code/java-projects/first", cm -> {
+            JavaClass javaClass = cm.getJavaClass();
+            Method method = cm.getMethod();
+            return javaClass.getClassName().equals("org.example.TestEntry");
+        });
+
+        printChainMap(chainMap);
+    }
 }

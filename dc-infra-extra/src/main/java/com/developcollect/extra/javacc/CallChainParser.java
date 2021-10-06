@@ -1,6 +1,7 @@
 package com.developcollect.extra.javacc;
 
 
+import com.developcollect.core.utils.CollUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -34,7 +35,8 @@ public class CallChainParser {
     }
 
     private CallInfo doParse(CallInfo ci) {
-        Map<String, CallInfo> callInfoMap = new HashMap<>();
+        // 这个map用来识别递归
+        Map<String, CallInfo> callInfoMap = new HashMap<>(128);
         Queue<CallInfo> queue = new LinkedList<>();
         queue.offer(ci);
 
@@ -48,7 +50,8 @@ public class CallChainParser {
             parseCallInfo(tree, callInfoMap);
 
             for (CallInfo child : tree.getCalleeList()) {
-                if (callInfoMap.containsKey(child.getCaller().getMethodInfo().getMethodSignature())) {
+                // 不为空，说明已经解析过了
+                if (CollUtil.isNotEmpty(child.getCalleeList())) {
                     continue;
                 }
                 queue.offer(child);
@@ -140,7 +143,27 @@ public class CallChainParser {
             String invokeMethodName = ii.getMethodName(cp);
             Type[] argumentTypes = ii.getArgumentTypes(cp);
             MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
+            boolean skipRawMethodInfo = false;
 
+            if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
+                // 如果是匿名内部类
+                if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
+                    //
+//                把调用加到当前的信息中
+                    JavaClass iaClass = bcelClassLoader.getJavaClass(referenceTypeName);
+                    for (Method method : iaClass.getMethods()) {
+                        CallInfo info = parse(iaClass, method);
+                        // todo 拿方法真正定义的行号
+                        info.getCaller().setLineNumber(sourceLine);
+                        ci.addCallee(info);
+                        skipRawMethodInfo = true;
+                    }
+                }
+            }
+
+            if (skipRawMethodInfo) {
+                return;
+            }
             ci.addCallee(new CallInfo(new CallInfo.Call(sourceLine, methodInfo)));
         }
     }
