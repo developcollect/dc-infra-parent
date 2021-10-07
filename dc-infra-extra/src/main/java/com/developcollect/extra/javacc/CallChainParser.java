@@ -2,7 +2,7 @@ package com.developcollect.extra.javacc;
 
 
 import com.developcollect.core.utils.CollUtil;
-import com.developcollect.core.utils.LambdaUtil;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -14,13 +14,14 @@ import java.util.function.Predicate;
  * 调用链解析器
  */
 @Slf4j
-public class CallChainParser {
+public class CallChainParser implements ICallChainParser {
 
-    private ListableClassPathRepository repository;
+    private final ListableClassPathRepository repository;
+    @Setter
     private SubClassScanner subClassScanner;
     private List<Predicate<CallInfo>> filters;
 
-    private ThreadLocal<Map<String, CallInfo>> callInfoCacheThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<Map<String, CallInfo>> callInfoCacheThreadLocal = new ThreadLocal<>();
 
 
     public CallChainParser(ListableClassPathRepository repository) {
@@ -249,14 +250,8 @@ public class CallChainParser {
     }
 
 
-    public static SubClassScanner defaultSubClassScanner() {
-        return (repository, superClass) -> {
-            try {
-                return repository.getSubClassList(superClass);
-            } catch (ClassNotFoundException e) {
-                return LambdaUtil.raise(e);
-            }
-        };
+    private static SubClassScanner defaultSubClassScanner() {
+        return ListableClassPathRepository::getSubClassList;
     }
 
     @FunctionalInterface

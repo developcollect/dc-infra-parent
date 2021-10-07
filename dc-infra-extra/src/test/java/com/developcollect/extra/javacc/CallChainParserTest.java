@@ -4,10 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class CallChainParserTest {
@@ -18,16 +15,23 @@ public class CallChainParserTest {
     public void init() {
 
         ListableClassPathRepository repository = new ListableClassPathRepository(new String[]{
-//                "/Volumes/D2/code/java-projects/first/target/first-1.0-SNAPSHOT.jar",
                 "/Volumes/D2/code/java-projects/first/target/classes",
                 "/Volumes/D2/.m2/repository/cn/hutool/hutool-all/5.7.13/hutool-all-5.7.13.jar"
         });
         parser = new CallChainParser(repository);
+
         parser.addFilter(callInfo -> {
             CallInfo.Call caller = callInfo.getCaller();
             MethodInfo methodInfo = caller.getMethodInfo();
             String callerClassName = methodInfo.getClassName();
             return !callerClassName.startsWith("java");
+        });
+
+        parser.setSubClassScanner((repo, superClass) -> {
+            if (superClass.getClassName().startsWith("org.example.")) {
+                return repo.getSubClassList(superClass);
+            }
+            return Collections.emptyList();
         });
     }
 
@@ -112,4 +116,10 @@ public class CallChainParserTest {
 
     }
 
+
+    @Test
+    public void test_f1() {
+        CallInfo callInfo = parser.parse("org.example.TestEntry", "f33");
+        CcInnerUtil.printCallInfo(callInfo);
+    }
 }

@@ -9,7 +9,7 @@ import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.util.ClassPath;
-import org.apache.bcel.util.MemorySensitiveClassPathRepository;
+import org.apache.bcel.util.ClassPathRepository;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.zip.ZipFile;
 
 
 @Slf4j
-public class ListableClassPathRepository extends MemorySensitiveClassPathRepository implements ListableRepository {
+public class ListableClassPathRepository extends ClassPathRepository implements ListableRepository {
 
     /**
      *
@@ -69,7 +69,7 @@ public class ListableClassPathRepository extends MemorySensitiveClassPathReposit
      * @throws ClassNotFoundException
      */
     @Override
-    public List<JavaClass> getImplementationOf(JavaClass inter) throws ClassNotFoundException {
+    public List<JavaClass> getImplementationOf(JavaClass inter) {
         return scanClasses(jc -> {
             try {
                 return jc.implementationOf(inter);
@@ -81,7 +81,7 @@ public class ListableClassPathRepository extends MemorySensitiveClassPathReposit
     }
 
     @Override
-    public List<JavaClass> getInstanceOf(JavaClass superClass) throws ClassNotFoundException {
+    public List<JavaClass> getInstanceOf(JavaClass superClass) {
         return scanClasses(jc -> {
             try {
                 return jc.instanceOf(superClass);
@@ -93,7 +93,7 @@ public class ListableClassPathRepository extends MemorySensitiveClassPathReposit
     }
 
     @Override
-    public List<JavaClass> getSubClassList(JavaClass superClass) throws ClassNotFoundException {
+    public List<JavaClass> getSubClassList(JavaClass superClass) {
         if (superClass.isInterface()) {
             return scanClasses(jc -> {
                 // 排除自己
@@ -156,36 +156,60 @@ public class ListableClassPathRepository extends MemorySensitiveClassPathReposit
                 return;
             }
 
-            try {
-                ClassParser classParser = new ClassParser(file.getAbsolutePath());
-                JavaClass javaClass = classParser.parse();
-                storeClass(javaClass);
+            JavaClass javaClass = null;
+            String fileCanonicalName = FileUtil.getCanonicalPath(file);
+
+            // 先尝试从缓存中拿
+            if (fileCanonicalName.endsWith(".class")) {
+                String classname = fileCanonicalName.substring(path.dir.length() + 1, fileCanonicalName.length() - 6).replaceAll("/", ".");
+                javaClass = findClass(classname);
+            }
+
+            if (javaClass == null) {
+                try {
+                    ClassParser classParser = new ClassParser(file.getAbsolutePath());
+                    javaClass = classParser.parse();
+                    storeClass(javaClass);
+                } catch (IOException e) {
+                    log.error("parse class error: {}", file.getAbsolutePath(), e);
+                }
+            }
+
+            if (javaClass != null) {
                 consumer.accept(javaClass);
-            } catch (IOException e) {
-                log.error("parse class error: {}", file.getAbsolutePath(), e);
             }
         });
     }
 
     private void listJar(PathEntryWrapper path, Predicate<ZipEntry> filter, Consumer<JavaClass> consumer) {
-        try (ZipFile jar = path.zipFile) {
-            for (Enumeration<? extends ZipEntry> enumeration = jar.entries(); enumeration.hasMoreElements(); ) {
-                ZipEntry jarEntry = enumeration.nextElement();
-                if (!filter.test(jarEntry)) {
-                    return;
-                }
+        for (Enumeration<? extends ZipEntry> enumeration = path.zipFile.entries(); enumeration.hasMoreElements(); ) {
+            ZipEntry jarEntry = enumeration.nextElement();
+            if (!filter.test(jarEntry)) {
+                continue;
+            }
 
+            JavaClass javaClass = null;
+            String entryName = jarEntry.getName();
+
+            // 先尝试从缓存中拿
+            if (entryName.endsWith(".class")) {
+                String classname = entryName.substring(0, entryName.length() - 6).replaceAll("/", ".");
+                javaClass = findClass(classname);
+            }
+
+            if (javaClass == null) {
                 try {
-                    ClassParser classParser = new ClassParser(jar.getName(), jarEntry.getName());
-                    JavaClass javaClass = classParser.parse();
+                    ClassParser classParser = new ClassParser(path.zipFile.getName(), entryName);
+                    javaClass = classParser.parse();
                     storeClass(javaClass);
-                    consumer.accept(javaClass);
                 } catch (IOException e) {
-                    log.error("parse class error: {}", jarEntry.getName(), e);
+                    log.error("parse class error: {}", entryName, e);
                 }
             }
-        } catch (IOException e) {
-            log.error("walk jar error: {}", path.zipFile.getName(), e);
+
+            if (javaClass != null) {
+                consumer.accept(javaClass);
+            }
         }
     }
 
