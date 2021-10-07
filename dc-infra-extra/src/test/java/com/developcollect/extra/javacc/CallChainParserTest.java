@@ -2,6 +2,7 @@ package com.developcollect.extra.javacc;
 
 import com.developcollect.extra.maven.MavenUtil;
 import com.developcollect.extra.maven.ProjectStructure;
+import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.junit.Before;
@@ -162,10 +163,12 @@ public class CallChainParserTest {
         Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
                 list,
                 cm -> {
-                    JavaClass javaClass = cm.getJavaClass();
-                    Method method = cm.getMethod();
                     // 扫描Controller类中的方法
-                    return javaClass.getClassName().startsWith("com.demo22.ccdemo.controller");
+                    JavaClass javaClass = cm.getJavaClass();
+                    if (javaClass.getClassName().startsWith("com.demo22.ccdemo.controller")) {
+                        return hasRequestMapper(cm.getMethod());
+                    }
+                    return false;
                 },
                 ci -> {
                     // 只解析本项目的类
@@ -184,5 +187,18 @@ public class CallChainParserTest {
         );
 
         CcSupport.printChainMap(chainMap);
+    }
+
+
+    private static boolean hasRequestMapper(Method method) {
+        AnnotationEntry[] annotationEntries = method.getAnnotationEntries();
+        for (AnnotationEntry annotationEntry : annotationEntries) {
+            String annotationType = annotationEntry.getAnnotationType();
+            if ("Lorg/springframework/web/bind/annotation/GetMapping;".equals(annotationType)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
