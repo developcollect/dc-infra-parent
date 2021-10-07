@@ -30,10 +30,12 @@ public class CallChainParser implements ICallChainParser {
         this.subClassScanner = defaultSubClassScanner();
     }
 
+    @Override
     public CallInfo parse(String className, String methodName, Type... argTypes) {
         return doParse(CallInfo.of(className, methodName, argTypes));
     }
 
+    @Override
     public CallInfo parse(JavaClass javaClass, Method method) {
         return doParse(CallInfo.of(javaClass, method));
     }
