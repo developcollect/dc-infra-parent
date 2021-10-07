@@ -40,9 +40,9 @@ public class CallChainParserTest {
     public void test22() throws IOException, NoSuchMethodException {
 
 
-        CallInfo en2 = parser.parse("org.example.TestEntry", "en2", CcInnerUtil.convertType(new Class[]{String.class, int.class}));
+        CallInfo en2 = parser.parse("org.example.TestEntry", "en2", CcSupport.convertType(new Class[]{String.class, int.class}));
 
-        CcInnerUtil.printCallInfo(en2);
+        CcSupport.printCallInfo(en2);
 
     }
 
@@ -51,7 +51,7 @@ public class CallChainParserTest {
 
         CallInfo en2 = parser.parse("org.example.TestEntry", "en3");
 
-        CcInnerUtil.printCallInfo(en2);
+        CcSupport.printCallInfo(en2);
     }
 
 
@@ -120,6 +120,6 @@ public class CallChainParserTest {
     @Test
     public void test_f1() {
         CallInfo callInfo = parser.parse("org.example.TestEntry", "f33");
-        CcInnerUtil.printCallInfo(callInfo);
+        CcSupport.printCallInfo(callInfo);
     }
 }

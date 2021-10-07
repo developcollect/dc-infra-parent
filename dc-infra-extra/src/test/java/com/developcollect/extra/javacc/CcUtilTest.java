@@ -11,7 +11,7 @@ public class CcUtilTest {
 
     private void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
         for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
-            CcInnerUtil.printCallInfo(entry.getValue());
+            CcSupport.printCallInfo(entry.getValue());
             System.out.println("\n\n");
         }
     }

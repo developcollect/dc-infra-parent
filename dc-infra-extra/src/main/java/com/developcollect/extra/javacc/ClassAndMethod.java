@@ -35,7 +35,7 @@ public class ClassAndMethod {
 
     @Override
     public String toString() {
-        return String.format("%s#%s%s", javaClass.getClassName(), method.getName(), CcInnerUtil.argumentList(method.getArgumentTypes()));
+        return String.format("%s#%s%s", javaClass.getClassName(), method.getName(), CcSupport.argumentList(method.getArgumentTypes()));
     }
 
 

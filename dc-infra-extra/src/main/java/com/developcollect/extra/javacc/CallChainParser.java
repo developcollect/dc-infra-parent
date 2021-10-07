@@ -113,7 +113,7 @@ public class CallChainParser implements ICallChainParser {
 
         try {
             JavaClass javaClass = repository.loadClass(callerClassName);
-            Method method = CcInnerUtil.findMethod(javaClass, callerMethodInfo.getMethodName(), callerMethodInfo.getArgumentTypes());
+            Method method = CcSupport.findMethod(javaClass, callerMethodInfo.getMethodName(), callerMethodInfo.getArgumentTypes());
 
             parseCallInfo(ci, javaClass, method);
         } catch (ClassNotFoundException | NoSuchMethodException e) {
@@ -202,13 +202,13 @@ public class CallChainParser implements ICallChainParser {
         // 处理Lambda表达式
         ConstantInvokeDynamic cid = (ConstantInvokeDynamic) constantId;
         // 获得JavaClass中指定下标的BootstrapMethod
-        BootstrapMethod bootstrapMethod = CcInnerUtil.getBootstrapMethod(javaClass, cid.getBootstrapMethodAttrIndex());
+        BootstrapMethod bootstrapMethod = CcSupport.getBootstrapMethod(javaClass, cid.getBootstrapMethodAttrIndex());
         if (bootstrapMethod == null) {
             throw new RuntimeException("### 无法找到bootstrapMethod " + cid.getBootstrapMethodAttrIndex());
         }
 
         // 获得BootstrapMethod的方法信息
-        MethodInfo bootstrapMethodMethod = CcInnerUtil.getBootstrapMethodMethod(bootstrapMethod, javaClass);
+        MethodInfo bootstrapMethodMethod = CcSupport.getBootstrapMethodMethod(bootstrapMethod, javaClass);
         if (bootstrapMethodMethod == null) {
             throw new RuntimeException("### 无法找到bootstrapMethod的方法信息 " + javaClass.getClassName() + " " + bootstrapMethod);
         }
@@ -225,9 +225,9 @@ public class CallChainParser implements ICallChainParser {
         MethodInfo methodInfo = new MethodInfo(referenceTypeName, invokeMethodName, argumentTypes);
         boolean skipRawMethodInfo = false;
 
-        if (CcInnerUtil.METHOD_NAME_INIT.equals(invokeMethodName)) {
+        if (CcSupport.METHOD_NAME_INIT.equals(invokeMethodName)) {
             // 如果是匿名内部类
-            if (CcInnerUtil.isInnerAnonymousClass(referenceTypeName)) {
+            if (CcSupport.isInnerAnonymousClass(referenceTypeName)) {
                 // 把调用加到当前的信息中
                 JavaClass iaClass = repository.loadClass(referenceTypeName);
                 for (Method method : iaClass.getMethods()) {

@@ -20,7 +20,7 @@ public class MethodInfo {
 
 
     public String getMethodSignature() {
-        return CcInnerUtil.getMethodSig(className, methodName, argumentTypes);
+        return CcSupport.getMethodSig(className, methodName, argumentTypes);
     }
 
     public static MethodInfo of(JavaClass javaClass, Method method) {
