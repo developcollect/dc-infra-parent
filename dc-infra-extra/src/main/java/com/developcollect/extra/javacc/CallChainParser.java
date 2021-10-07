@@ -19,14 +19,14 @@ public class CallChainParser implements ICallChainParser {
     private final ListableClassPathRepository repository;
     @Setter
     private SubClassScanner subClassScanner;
-    private List<Predicate<CallInfo>> filters;
+    private List<Predicate<CallInfo>> parseFilters;
 
     private final ThreadLocal<Map<String, CallInfo>> callInfoCacheThreadLocal = new ThreadLocal<>();
 
 
     public CallChainParser(ListableClassPathRepository repository) {
         this.repository = repository;
-        this.filters = new ArrayList<>();
+        this.parseFilters = new ArrayList<>();
         this.subClassScanner = defaultSubClassScanner();
     }
 
@@ -56,7 +56,7 @@ public class CallChainParser implements ICallChainParser {
             while (!queue.isEmpty()) {
                 CallInfo tree = queue.poll();
 
-                if (!filter(tree)) {
+                if (!doParseFilter(tree)) {
                     continue;
                 }
 
@@ -87,11 +87,11 @@ public class CallChainParser implements ICallChainParser {
         return ci;
     }
 
-    private boolean filter(CallInfo callInfo) {
-        if (filters.isEmpty()) {
+    private boolean doParseFilter(CallInfo callInfo) {
+        if (parseFilters.isEmpty()) {
             return true;
         }
-        for (Predicate<CallInfo> filter : filters) {
+        for (Predicate<CallInfo> filter : parseFilters) {
             if (filter.test(callInfo)) {
                 return true;
             }
@@ -245,9 +245,9 @@ public class CallChainParser implements ICallChainParser {
         }
     }
 
-    public void addFilter(Predicate<CallInfo> filter) {
+    public void addParseFilter(Predicate<CallInfo> filter) {
         if (filter != null) {
-            this.filters.add(filter);
+            this.parseFilters.add(filter);
         }
     }
 

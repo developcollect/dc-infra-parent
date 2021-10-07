@@ -3,6 +3,7 @@ package com.developcollect.extra.maven;
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
+import com.developcollect.core.tree.TreeUtil;
 import com.developcollect.core.utils.ArrayUtil;
 import com.developcollect.core.utils.FileUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +13,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -46,14 +45,19 @@ public class MavenUtil {
     private static ProjectStructure analysisPom(ProjectStructure parent, File pomFile) {
         ProjectStructure ps = doAnalysisPom(parent, pomFile);
 
-        File[] ls = FileUtil.ls(ps.getProjectPath());
-        List<ProjectStructure> collect = Arrays.stream(ls)
-                .map(MavenUtil::locatePom)
-                .filter(Objects::nonNull)
-                .map(pf -> analysisPom(ps, pf))
-                .collect(Collectors.toList());
+        // pom类型项目，继续扫描子包
+        if ("pom".equals(ps.getPackaging())) {
+            File[] ls = FileUtil.ls(ps.getProjectPath());
+            List<ProjectStructure> collect = Arrays.stream(ls)
+                    .filter(File::isDirectory)
+                    .filter(f -> ps.getModules().contains(f.getName()))
+                    .map(MavenUtil::locatePom)
+                    .filter(Objects::nonNull)
+                    .map(pf -> analysisPom(ps, pf))
+                    .collect(Collectors.toList());
 
-        ps.setModules(collect);
+            ps.setModuleProjectStructures(collect);
+        }
 
         return ps;
     }
@@ -91,13 +95,23 @@ public class MavenUtil {
             if (item.getNodeType() == Node.ELEMENT_NODE) {
                 String nodeName = item.getNodeName();
                 if ("groupId".equals(nodeName)) {
-                    ps.setGroupId(item.getTextContent());
+                    ps.setGroupId(item.getTextContent().trim());
                 } else if ("artifactId".equals(nodeName)) {
-                    ps.setArtifactId(item.getTextContent());
+                    ps.setArtifactId(item.getTextContent().trim());
                 } else if ("version".equals(nodeName)) {
-                    ps.setVersion(item.getTextContent());
+                    ps.setVersion(item.getTextContent().trim());
                 } else if ("packaging".equals(nodeName)) {
-                    ps.setPackaging(item.getTextContent().toLowerCase());
+                    ps.setPackaging(item.getTextContent().toLowerCase().trim());
+                } else if ("modules".equals(nodeName)) {
+                    NodeList moduleNodeList = item.getChildNodes();
+                    List<String> modules = new ArrayList<>();
+                    for (int m = 0; m < moduleNodeList.getLength(); m++) {
+                        Node moduleNode = moduleNodeList.item(m);
+                        if ("module".equals(moduleNode.getNodeName())) {
+                            modules.add(moduleNode.getTextContent().trim());
+                        }
+                    }
+                    ps.setModules(modules);
                 }
             }
         }
@@ -105,13 +119,18 @@ public class MavenUtil {
         // 如果pom文件中没有指定Packaging，那么设置默认值
         if (ps.getPackaging() == null) {
             ps.setPackaging("jar");
+        } else if ("pom".equals(ps.getPackaging()) && ps.getModules() == null) {
+            ps.setModules(Collections.emptyList());
+            ps.setModuleProjectStructures(Collections.emptyList());
         }
+
         if (ps.getGroupId() == null && parent != null) {
             ps.setGroupId(parent.getGroupId());
         }
         if (ps.getVersion() == null && parent != null) {
             ps.setVersion(parent.getVersion());
         }
+
 
         ps.setParent(parent);
         ps.setProjectPath(FileUtil.getCanonicalPath(pomFile.getParentFile()));
@@ -195,5 +214,14 @@ public class MavenUtil {
         } catch (Exception ignore) {
         }
         return null;
+    }
+
+
+    public static String[] collectClassPaths(ProjectStructure projectStructure) {
+        List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
+        String[] classPaths = projectStructures.stream()
+                .map(ps -> ps.getProjectPath() + "/target/classes")
+                .toArray(String[]::new);
+        return classPaths;
     }
 }

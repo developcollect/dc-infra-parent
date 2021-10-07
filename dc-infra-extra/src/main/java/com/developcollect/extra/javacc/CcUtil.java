@@ -1,7 +1,6 @@
 package com.developcollect.extra.javacc;
 
 
-import com.developcollect.core.tree.TreeUtil;
 import com.developcollect.extra.maven.MavenUtil;
 import com.developcollect.extra.maven.ProjectStructure;
 import lombok.extern.slf4j.Slf4j;
@@ -38,45 +37,31 @@ public class CcUtil {
         MavenUtil.mvnWithThrow(projectStructure.getPomPath(), "clean", "compile");
 
         // 定位classes目录
-        String[] classPaths = collectClassPaths(projectStructure);
+        String[] classPaths = MavenUtil.collectClassPaths(projectStructure);
 
-        return parseChain(classPaths, scanFilter, parseFilter);
+        return parseChain(classPaths, scanFilter, parseFilter, null);
     }
 
-    public static Map<ClassAndMethod, CallInfo> parseChain(String[] paths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter) {
+    public static Map<ClassAndMethod, CallInfo> parseChain(String[] paths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter, CallChainParser.SubClassScanner subClassScanner) {
         // 扫描类，定位需要解析的类和方法
         ListableClassPathRepository repository = new ListableClassPathRepository(paths);
-
         List<ClassAndMethod> classAndMethods = repository.scanMethods(scanFilter);
 
-        // 执行解析
+        // 创建解析器
         CallChainParser parser = new CallChainParser(repository);
         if (parseFilter != null) {
-            parser.addFilter(parseFilter);
+            parser.addParseFilter(parseFilter);
         }
+        if (subClassScanner != null) {
+            parser.setSubClassScanner(subClassScanner);
+        }
+
+        // 执行解析
         Map<ClassAndMethod, CallInfo> result = classAndMethods.stream()
                 .collect(Collectors.toMap(cm -> cm, cm -> parser.parse(cm.getJavaClass(), cm.getMethod())));
 
         return result;
     }
-
-    private static String[] collectClassPaths(ProjectStructure projectStructure) {
-        List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
-        String[] classPaths = projectStructures.stream()
-                .map(ps -> ps.getProjectPath() + "/target/classes")
-                .toArray(String[]::new);
-        return classPaths;
-    }
-
-
-
-
-
-
-
-
-
-
 
 
 }

@@ -20,7 +20,7 @@ public class CallChainParserTest {
         });
         parser = new CallChainParser(repository);
 
-        parser.addFilter(callInfo -> {
+        parser.addParseFilter(callInfo -> {
             CallInfo.Call caller = callInfo.getCaller();
             MethodInfo methodInfo = caller.getMethodInfo();
             String callerClassName = methodInfo.getClassName();
