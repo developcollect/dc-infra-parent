@@ -2,6 +2,8 @@ package com.developcollect.extra.maven;
 
 import org.junit.Test;
 
+import java.util.List;
+
 public class MavenUtilTest {
 
 
@@ -11,6 +13,12 @@ public class MavenUtilTest {
         System.out.println(ps);
     }
 
+
+    @Test
+    public void test_getDependClassPaths() {
+        List<String> compileClassPaths = MavenUtil.getDependClassPaths("/Volumes/D2/code/java-projects/dc-infra-parent");
+        System.out.println(compileClassPaths);
+    }
 
     @Test
     public void test_findMavenHome() {

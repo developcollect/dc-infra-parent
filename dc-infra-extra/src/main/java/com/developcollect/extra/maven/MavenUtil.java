@@ -1,6 +1,7 @@
 package com.developcollect.extra.maven;
 
 import cn.hutool.core.exceptions.UtilException;
+import cn.hutool.core.lang.PatternPool;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
 import com.developcollect.core.tree.TreeUtil;
@@ -15,6 +16,8 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -140,13 +143,13 @@ public class MavenUtil {
 
 
     public static InvocationResult mvn(String pomPath, String... cmd) {
-        return mvn(pomPath, cmd, null);
+        return mvn(pomPath, Arrays.asList(cmd), null);
     }
 
 
     public static InvocationResult mvnWithThrow(String pomPath, String... cmd) {
         StringBuilder sb = new StringBuilder();
-        InvocationResult result = mvn(pomPath, cmd, line -> {
+        InvocationResult result = mvn(pomPath, Arrays.asList(cmd), line -> {
             if (line.startsWith("[ERROR]")) {
                 sb.append("\n").append(line);
             }
@@ -161,8 +164,10 @@ public class MavenUtil {
     }
 
 
-    public static InvocationResult mvn(String pomPath, String[] cmd, InvocationOutputHandler outputHandler) {
-        return mvn(pomPath, cmd, request -> {
+    public static InvocationResult mvn(String pomPath, List<String> cmd, InvocationOutputHandler outputHandler) {
+        return mvn(pomPath, request -> {
+            // 设置goals
+            request.setGoals(cmd);
         }, invoker -> {
             if (outputHandler != null) {
                 invoker.setOutputHandler(outputHandler);
@@ -172,12 +177,11 @@ public class MavenUtil {
     }
 
 
-    public static InvocationResult mvn(String pomPath, String[] cmd, Consumer<InvocationRequest> requestHook, Consumer<Invoker> invokerHook) {
+    public static InvocationResult mvn(String pomPath, Consumer<InvocationRequest> requestHook, Consumer<Invoker> invokerHook) {
         InvocationRequest request = new DefaultInvocationRequest();
         // 设置pom文件
         request.setPomFile(new File(pomPath));
-        // 设置goals
-        request.setGoals(Arrays.asList(cmd));
+
         // 设置为非交互模式
         request.setBatchMode(true);
         // 设置跳过单元测试
@@ -223,5 +227,51 @@ public class MavenUtil {
                 .map(ps -> ps.getProjectPath() + "/target/classes")
                 .toArray(String[]::new);
         return classPaths;
+    }
+
+
+    /**
+     * 传入项目根目录，然后项目编译时的依赖classpath
+     * 只支持maven项目
+     *
+     * @param projectRootPath
+     * @return
+     * @author Zhu Kaixiao
+     * @date 2020/10/12 14:17
+     */
+    public static List<String> getDependClassPaths(String projectRootPath) {
+        StringBuilder sb = new StringBuilder();
+        StringBuilder errorSb = new StringBuilder();
+        InvocationResult invocationResult = mvn(projectRootPath + File.separator + "pom.xml", request -> {
+            request.setGoals(Collections.singletonList("compile"));
+            request.setDebug(true);
+        }, invoker -> {
+            invoker.setOutputHandler(line -> {
+                // 先把输出全部存到sb中，后续在提取出需要的数据
+                if (line.startsWith("[ERROR]")) {
+                    errorSb.append(line);
+                } else if (line.startsWith("[DEBUG]")) {
+                    sb.append(line);
+                }
+            });
+        });
+
+        if (invocationResult.getExecutionException() != null) {
+            throw new UtilException(invocationResult.getExecutionException());
+        }
+        if (invocationResult.getExitCode() != 0) {
+            throw new UtilException("执行mvn命令【mvn compile】异常：" + errorSb);
+        }
+        String s = sb.toString();
+
+        Pattern compile = PatternPool.get("\\[DEBUG]   \\(f\\) compilePath = \\[(.+?)]");
+        Matcher matcher = compile.matcher(s);
+
+        Set<String> strSet = new HashSet<>();
+        while (matcher.find()) {
+            String[] split = matcher.group(1).split(", ");
+            strSet.addAll(Arrays.asList(split));
+        }
+        return new ArrayList<>(strSet);
     }
 }
