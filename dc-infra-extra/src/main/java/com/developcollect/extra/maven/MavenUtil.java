@@ -254,11 +254,11 @@ public class MavenUtil {
     }
 
 
-    public static String[] collectClassPaths(ProjectStructure projectStructure) {
+    public static List<String> collectClassPaths(ProjectStructure projectStructure) {
         List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
-        String[] classPaths = projectStructures.stream()
+        List<String> classPaths = projectStructures.stream()
                 .map(ps -> ps.getProjectPath() + "/target/classes")
-                .toArray(String[]::new);
+                .collect(Collectors.toList());
         return classPaths;
     }
 

@@ -3,6 +3,7 @@ package com.developcollect.extra.javacc;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -16,10 +17,9 @@ import java.util.stream.Collectors;
 public class CcUtil {
 
 
-
-    public static Map<ClassAndMethod, CallInfo> parseChain(String[] paths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter, CallChainParser.SubClassScanner subClassScanner) {
+    public static Map<ClassAndMethod, CallInfo> parseChain(Collection<String> paths, Predicate<ClassAndMethod> scanFilter, Predicate<CallInfo> parseFilter, CallChainParser.SubClassScanner subClassScanner) {
         // 扫描类，定位需要解析的类和方法
-        ListableClassPathRepository repository = new ListableClassPathRepository(paths);
+        ListableClassPathRepository repository = new ListableClassPathRepository(paths.toArray(new String[0]));
         List<ClassAndMethod> classAndMethods = repository.scanMethods(scanFilter);
 
         // 创建解析器

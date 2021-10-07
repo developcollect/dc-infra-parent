@@ -280,6 +280,13 @@ class CcSupport {
         throw new NoSuchMethodException("方法不存在");
     }
 
+    public static void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
+        for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
+            printCallInfo(entry.getValue());
+            System.out.println("\n\n");
+        }
+    }
+
     public static void printCallInfo(CallInfo callInfo) {
         Stack<DeepWrapper<CallInfo>> stack = new Stack<>();
         stack.push(new DeepWrapper<>(1, callInfo));

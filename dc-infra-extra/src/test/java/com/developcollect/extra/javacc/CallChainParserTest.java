@@ -1,5 +1,9 @@
 package com.developcollect.extra.javacc;
 
+import com.developcollect.extra.maven.MavenUtil;
+import com.developcollect.extra.maven.ProjectStructure;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.Method;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -121,5 +125,50 @@ public class CallChainParserTest {
     public void test_f1() {
         CallInfo callInfo = parser.parse("org.example.TestEntry", "f33");
         CcSupport.printCallInfo(callInfo);
+    }
+
+
+    @Test
+    public void test_final() {
+        // 准备多个maven项目
+        List<String> projects = Arrays.asList("/Volumes/D2/code/java-projects/first");
+
+
+        Set<String> classPaths = new HashSet<>();
+        for (String project : projects) {
+            ProjectStructure projectStructure = MavenUtil.analysisProject(project);
+            List<String> dependClassPaths = MavenUtil.getDependClassPaths(projectStructure.getProjectPath());
+            List<String> collectClassPaths = MavenUtil.collectClassPaths(projectStructure);
+
+            classPaths.addAll(dependClassPaths);
+            classPaths.addAll(collectClassPaths);
+        }
+
+
+        Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
+                classPaths,
+                cm -> {
+                    JavaClass javaClass = cm.getJavaClass();
+                    Method method = cm.getMethod();
+                    // 扫描Controller类中的方法
+                    return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f33");
+                },
+                ci -> {
+                    // 只解析本项目的类
+                    CallInfo.Call caller = ci.getCaller();
+                    MethodInfo methodInfo = caller.getMethodInfo();
+                    String callerClassName = methodInfo.getClassName();
+                    return callerClassName.startsWith("org.example");
+                },
+                (repo, superClass) -> {
+                    // 只对本项目中的接口进行实现类查找
+                    if (superClass.getClassName().startsWith("org.example.")) {
+                        return repo.getSubClassList(superClass);
+                    }
+                    return Collections.emptyList();
+                }
+        );
+
+        CcSupport.printChainMap(chainMap);
     }
 }

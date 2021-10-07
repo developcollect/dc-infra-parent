@@ -7,17 +7,13 @@ import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.Type;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
 public class CcUtilTest {
 
-    private void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
-        for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
-            CcSupport.printCallInfo(entry.getValue());
-            System.out.println("\n\n");
-        }
-    }
+
 
     @Test
     public void test2a() {
@@ -38,7 +34,7 @@ public class CcUtilTest {
             return false;
         });
 
-        printChainMap(chainMap);
+        CcSupport.printChainMap(chainMap);
     }
 
 
@@ -50,7 +46,7 @@ public class CcUtilTest {
             return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f1");
         });
 
-        printChainMap(chainMap);
+        CcSupport.printChainMap(chainMap);
     }
 
 
@@ -61,7 +57,7 @@ public class CcUtilTest {
             return javaClass.getClassName().equals("org.example.TestEntry");
         });
 
-        printChainMap(chainMap);
+        CcSupport.printChainMap(chainMap);
     }
 
 
@@ -78,7 +74,7 @@ public class CcUtilTest {
             return callerClassName.startsWith("org.example");
         });
 
-        printChainMap(chainMap);
+        CcSupport.printChainMap(chainMap);
     }
 
 
@@ -101,7 +97,7 @@ public class CcUtilTest {
         MavenUtil.mvnWithThrow(projectStructure.getPomPath(), "clean", "compile");
 
         // 定位classes目录
-        String[] classPaths = MavenUtil.collectClassPaths(projectStructure);
+        List<String> classPaths = MavenUtil.collectClassPaths(projectStructure);
 
         return CcUtil.parseChain(classPaths, scanFilter, parseFilter, null);
     }
