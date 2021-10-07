@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class CallChainParserTest {
@@ -131,7 +132,10 @@ public class CallChainParserTest {
     @Test
     public void test_final() {
         // 准备多个maven项目
-        List<String> projects = Arrays.asList("/Volumes/D2/code/java-projects/first");
+        List<String> projects = Arrays.asList(
+                "/Volumes/D2/code/java-projects/ccdemo",
+                "/Volumes/D2/code/java-projects/ccdemoden"
+        );
 
 
         Set<String> classPaths = new HashSet<>();
@@ -144,25 +148,35 @@ public class CallChainParserTest {
             classPaths.addAll(collectClassPaths);
         }
 
+        // 过滤classpath，只保留需要分析的类的classpath
+        List<String> list = classPaths.stream()
+                .filter(cp -> {
+                    if (cp.endsWith(".jar")) {
+                        return cp.contains("com/example");
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
 
         Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
-                classPaths,
+                list,
                 cm -> {
                     JavaClass javaClass = cm.getJavaClass();
                     Method method = cm.getMethod();
                     // 扫描Controller类中的方法
-                    return javaClass.getClassName().equals("org.example.TestEntry") && method.getName().equals("f33");
+                    return javaClass.getClassName().startsWith("com.demo22.ccdemo.controller");
                 },
                 ci -> {
                     // 只解析本项目的类
                     CallInfo.Call caller = ci.getCaller();
                     MethodInfo methodInfo = caller.getMethodInfo();
                     String callerClassName = methodInfo.getClassName();
-                    return callerClassName.startsWith("org.example");
+                    return callerClassName.startsWith("com.demo22") || callerClassName.startsWith("org.example");
                 },
                 (repo, superClass) -> {
                     // 只对本项目中的接口进行实现类查找
-                    if (superClass.getClassName().startsWith("org.example.")) {
+                    if (superClass.getClassName().startsWith("com.demo22.") || superClass.getClassName().startsWith("org.example")) {
                         return repo.getSubClassList(superClass);
                     }
                     return Collections.emptyList();
