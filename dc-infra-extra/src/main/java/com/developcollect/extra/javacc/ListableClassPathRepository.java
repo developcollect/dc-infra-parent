@@ -161,7 +161,7 @@ public class ListableClassPathRepository extends ClassPathRepository implements 
 
             // 先尝试从缓存中拿
             if (fileCanonicalName.endsWith(".class")) {
-                String classname = fileCanonicalName.substring(path.dir.length() + 1, fileCanonicalName.length() - 6).replaceAll("/", ".");
+                String classname = fileCanonicalName.substring(path.dir.length() + 1, fileCanonicalName.length() - 6).replaceAll(File.separator, ".");
                 javaClass = findClass(classname);
             }
 
