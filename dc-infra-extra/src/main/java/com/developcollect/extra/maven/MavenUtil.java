@@ -5,8 +5,9 @@ import cn.hutool.core.lang.PatternPool;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
 import com.developcollect.core.tree.TreeUtil;
-import com.developcollect.core.utils.ArrayUtil;
+import com.developcollect.core.utils.CollUtil;
 import com.developcollect.core.utils.FileUtil;
+import com.developcollect.core.utils.ReflectUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.shared.invoker.*;
 import org.w3c.dom.Document;
@@ -15,6 +16,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,24 +148,6 @@ public class MavenUtil {
         return mvn(pomPath, Arrays.asList(cmd), null);
     }
 
-
-    public static InvocationResult mvnWithThrow(String pomPath, String... cmd) {
-        StringBuilder sb = new StringBuilder();
-        InvocationResult result = mvn(pomPath, Arrays.asList(cmd), line -> {
-            if (line.startsWith("[ERROR]")) {
-                sb.append("\n").append(line);
-            }
-        });
-        if (result.getExecutionException() != null) {
-            throw new UtilException(result.getExecutionException());
-        }
-        if (result.getExitCode() != 0) {
-            throw new UtilException("执行mvn命令【mvn " + ArrayUtil.join(cmd, " ") + "】异常：" + sb);
-        }
-        return result;
-    }
-
-
     public static InvocationResult mvn(String pomPath, List<String> cmd, InvocationOutputHandler outputHandler) {
         return mvn(pomPath, request -> {
             // 设置goals
@@ -198,6 +182,55 @@ public class MavenUtil {
         } catch (MavenInvocationException e) {
             throw new UtilException(e);
         }
+    }
+
+
+    public static InvocationResult mvnWithThrow(String pomPath, String... cmd) {
+        return mvnWithThrow(pomPath, request -> request.setGoals(Arrays.asList(cmd)), invoker -> {
+        });
+    }
+
+
+    public static InvocationResult mvnWithThrow(String pomPath, Consumer<InvocationRequest> requestHook, Consumer<Invoker> invokerHook) {
+        StringBuilder errorInfoSb = new StringBuilder();
+        AtomicReference<InvocationRequest> request = new AtomicReference<>();
+        InvocationResult result = mvn(pomPath, req -> {
+            request.set(req);
+            if (requestHook != null) {
+                requestHook.accept(req);
+            }
+        }, invoker -> {
+            InvocationOutputHandler errorInfoInvocationOutputHandler = line -> {
+                if (line.startsWith("[ERROR]")) {
+                    errorInfoSb.append("\n").append(line);
+                }
+            };
+
+            if (invokerHook != null) {
+                invokerHook.accept(invoker);
+
+                InvocationOutputHandler defaultOutputHandler = (InvocationOutputHandler) ReflectUtil.getFieldValue(invoker.getClass(), "DEFAULT_OUTPUT_HANDLER");
+                InvocationOutputHandler outputHandler = (InvocationOutputHandler) ReflectUtil.getFieldValue(invoker, "outputHandler");
+                if (outputHandler == defaultOutputHandler) {
+                    invoker.setOutputHandler(errorInfoInvocationOutputHandler);
+                } else {
+                    invoker.setOutputHandler(line -> {
+                        errorInfoInvocationOutputHandler.consumeLine(line);
+                        outputHandler.consumeLine(line);
+                    });
+                }
+            } else {
+                invoker.setOutputHandler(errorInfoInvocationOutputHandler);
+            }
+        });
+
+        if (result.getExecutionException() != null) {
+            throw new UtilException(result.getExecutionException());
+        }
+        if (result.getExitCode() != 0) {
+            throw new UtilException("执行mvn命令【mvn " + CollUtil.join(request.get().getGoals(), " ") + "】异常：" + errorInfoSb);
+        }
+        return result;
     }
 
 
@@ -241,27 +274,20 @@ public class MavenUtil {
      */
     public static List<String> getDependClassPaths(String projectRootPath) {
         StringBuilder sb = new StringBuilder();
-        StringBuilder errorSb = new StringBuilder();
-        InvocationResult invocationResult = mvn(projectRootPath + File.separator + "pom.xml", request -> {
+
+        mvnWithThrow(projectRootPath + File.separator + "pom.xml", request -> {
             request.setGoals(Collections.singletonList("compile"));
             request.setDebug(true);
         }, invoker -> {
             invoker.setOutputHandler(line -> {
                 // 先把输出全部存到sb中，后续在提取出需要的数据
-                if (line.startsWith("[ERROR]")) {
-                    errorSb.append(line);
-                } else if (line.startsWith("[DEBUG]")) {
+                if (line.startsWith("[DEBUG]")) {
                     sb.append(line);
                 }
             });
         });
 
-        if (invocationResult.getExecutionException() != null) {
-            throw new UtilException(invocationResult.getExecutionException());
-        }
-        if (invocationResult.getExitCode() != 0) {
-            throw new UtilException("执行mvn命令【mvn compile】异常：" + errorSb);
-        }
+
         String s = sb.toString();
 
         Pattern compile = PatternPool.get("\\[DEBUG]   \\(f\\) compilePath = \\[(.+?)]");
