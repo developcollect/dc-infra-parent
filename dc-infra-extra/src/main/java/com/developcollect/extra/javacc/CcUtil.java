@@ -4,6 +4,7 @@ package com.developcollect.extra.javacc;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -32,7 +33,7 @@ public class CcUtil {
         }
 
         // 执行解析
-        Map<ClassAndMethod, CallInfo> result = classAndMethods.stream()
+        Map<ClassAndMethod, CallInfo> result = new HashSet<>(classAndMethods).stream()
                 .collect(Collectors.toMap(cm -> cm, cm -> parser.parse(cm.getJavaClass(), cm.getMethod())));
 
         return result;

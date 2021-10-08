@@ -1,5 +1,6 @@
 package com.developcollect.extra.javacc;
 
+import com.developcollect.core.utils.FileUtil;
 import com.developcollect.extra.maven.MavenUtil;
 import com.developcollect.extra.maven.ProjectStructure;
 import org.apache.bcel.classfile.AnnotationEntry;
@@ -230,14 +231,19 @@ public class CallChainParserTest {
 
         // 过滤classpath，只保留需要分析的类的classpath
         List<String> list = classPaths.stream()
-                .filter(cp -> {
-                    if (cp.endsWith(".jar")) {
-                        return cp.contains("/com/bs/");
-                    }
-                    return true;
-                })
+//                .filter(cp -> {
+//                    if (cp.endsWith(".jar")) {
+//                        return cp.replaceAll("\\\\", "/").contains("/com/bs/");
+//                    }
+//                    return true;
+//                })
+                .sorted((o1, o2) -> Boolean.compare(FileUtil.isFile(o1), FileUtil.isFile(o2)))
                 .collect(Collectors.toList());
 
+
+        for (String s : list) {
+            System.out.println(s);
+        }
 
         Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
                 list,

@@ -31,7 +31,7 @@ public class ListableClassPathRepository extends ClassPathRepository implements 
     private final PathEntryWrapper[] paths;
 
     public ListableClassPathRepository(String[] paths) {
-        this(new ClassPath(ArrayUtil.join(paths, ":")));
+        this(new ClassPath(ArrayUtil.join(paths, File.pathSeparator)));
     }
 
     public ListableClassPathRepository(ClassPath classPath) {
@@ -161,7 +161,13 @@ public class ListableClassPathRepository extends ClassPathRepository implements 
 
             // 先尝试从缓存中拿
             if (fileCanonicalName.endsWith(".class")) {
-                String classname = fileCanonicalName.substring(path.dir.length() + 1, fileCanonicalName.length() - 6).replaceAll(File.separator, ".");
+                String str = fileCanonicalName.substring(path.dir.length() + 1, fileCanonicalName.length() - 6);
+                String classname;
+                if ("\\".equals(File.separator)) {
+                    classname = str.replaceAll("\\\\", ".");
+                } else {
+                    classname = str.replaceAll(File.separator, ".");
+                }
                 javaClass = findClass(classname);
             }
 

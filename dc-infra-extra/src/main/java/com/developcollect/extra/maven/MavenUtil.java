@@ -272,7 +272,7 @@ public class MavenUtil {
     public static List<String> collectClassPaths(ProjectStructure projectStructure) {
         List<ProjectStructure> projectStructures = TreeUtil.flat(projectStructure, TreeUtil::preOrder, ps -> !"pom".equals(ps.getPackaging()));
         List<String> classPaths = projectStructures.stream()
-                .map(ps -> ps.getProjectPath() + "/target/classes")
+                .map(ps -> ps.getProjectPath() + File.separator + "target" + File.separator + "classes")
                 .collect(Collectors.toList());
         return classPaths;
     }
@@ -296,16 +296,18 @@ public class MavenUtil {
         }, invoker -> {
             invoker.setOutputHandler(line -> {
                 // 先把输出全部存到sb中，后续在提取出需要的数据
-                if (line.startsWith("[DEBUG]")) {
-                    sb.append(line);
-                }
+                sb.append(line).append("\n");
             });
         });
 
 
         String s = sb.toString();
+        String keyword = "compilePath";
+        if (s.contains("classpathElements")) {
+            keyword = "classpathElements";
+        }
 
-        Pattern compile = PatternPool.get("\\[DEBUG]   \\(f\\) compilePath = \\[(.+?)]");
+        Pattern compile = PatternPool.get("\\[DEBUG]   \\(f\\) " + keyword + " = \\[(.+?)]");
         Matcher matcher = compile.matcher(s);
 
         Set<String> strSet = new HashSet<>();
