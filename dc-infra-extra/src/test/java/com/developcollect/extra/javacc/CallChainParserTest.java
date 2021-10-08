@@ -197,8 +197,75 @@ public class CallChainParserTest {
             if ("Lorg/springframework/web/bind/annotation/GetMapping;".equals(annotationType)) {
                 return true;
             }
+            if ("Lorg/springframework/web/bind/annotation/PostMapping;".equals(annotationType)) {
+                return true;
+            }
+            if ("Lorg/springframework/web/bind/annotation/RequestMapping;".equals(annotationType)) {
+                return true;
+            }
         }
 
         return false;
     }
+
+
+    @Test
+    public void test_final_cy() {
+        // 准备多个maven项目
+        List<String> projects = Arrays.asList(
+                "D:\\code\\cy\\app-front",
+                "D:\\code\\cy\\bps"
+        );
+
+
+        Set<String> classPaths = new HashSet<>();
+        for (String project : projects) {
+            ProjectStructure projectStructure = MavenUtil.analysisProject(project);
+            List<String> dependClassPaths = MavenUtil.getDependClassPaths(projectStructure.getProjectPath());
+            List<String> collectClassPaths = MavenUtil.collectClassPaths(projectStructure);
+
+            classPaths.addAll(dependClassPaths);
+            classPaths.addAll(collectClassPaths);
+        }
+
+        // 过滤classpath，只保留需要分析的类的classpath
+        List<String> list = classPaths.stream()
+                .filter(cp -> {
+                    if (cp.endsWith(".jar")) {
+                        return cp.contains("/com/bs/");
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+
+        Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
+                list,
+                cm -> {
+                    // 扫描Controller类中的方法
+                    JavaClass javaClass = cm.getJavaClass();
+                    if (javaClass.getClassName().startsWith("com.bs.app.front.controller.")) {
+                        return hasRequestMapper(cm.getMethod());
+                    }
+                    return false;
+                },
+                ci -> {
+                    // 只解析本项目的类
+                    CallInfo.Call caller = ci.getCaller();
+                    MethodInfo methodInfo = caller.getMethodInfo();
+                    String callerClassName = methodInfo.getClassName();
+                    return callerClassName.startsWith("com.bs.") ;
+                },
+                (repo, superClass) -> {
+                    // 只对本项目中的接口进行实现类查找
+                    if (superClass.getClassName().startsWith("com.bs.")) {
+                        return repo.getSubClassList(superClass);
+                    }
+                    return Collections.emptyList();
+                }
+        );
+
+        CcSupport.printChainMap(chainMap);
+    }
+
 }

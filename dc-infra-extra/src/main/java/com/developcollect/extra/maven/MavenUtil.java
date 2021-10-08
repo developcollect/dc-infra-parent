@@ -4,6 +4,7 @@ import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.PatternPool;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.core.util.XmlUtil;
+import cn.hutool.system.SystemUtil;
 import com.developcollect.core.tree.TreeUtil;
 import com.developcollect.core.utils.CollUtil;
 import com.developcollect.core.utils.FileUtil;
@@ -29,7 +30,10 @@ public class MavenUtil {
     private static final String POM_FILENAME = "pom.xml";
 
     static {
-        findMavenHome();
+        String mavenHome = findMavenHome();
+        if (mavenHome != null) {
+            System.setProperty("maven.home", mavenHome);
+        }
     }
 
     /**
@@ -236,16 +240,27 @@ public class MavenUtil {
 
     public static String findMavenHome() {
         String mavenHome = System.getProperty("maven.home");
+        if (mavenHome == null) {
+            mavenHome = System.getenv("MAVEN_HOME");
+        }
+        if (mavenHome == null) {
+            mavenHome = System.getenv("maven_home");
+        }
         if (mavenHome != null) {
             return mavenHome;
         }
 
         try {
-            List<String> strings = RuntimeUtil.execForLines("mvn", "-v");
+            List<String> strings;
+            if (SystemUtil.getOsInfo().isWindows()) {
+                strings = RuntimeUtil.execForLines("cmd /c", "mvn", "-v");
+            } else {
+                strings = RuntimeUtil.execForLines("mvn", "-v");
+            }
+
             for (String string : strings) {
                 if (string.startsWith("Maven home:")) {
-                    mavenHome = string.substring(11).trim();
-                    System.setProperty("maven.home", mavenHome);
+                    return string.substring(11).trim();
                 }
             }
         } catch (Exception ignore) {
