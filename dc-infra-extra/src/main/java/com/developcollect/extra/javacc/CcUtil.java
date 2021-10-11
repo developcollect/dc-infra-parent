@@ -3,10 +3,7 @@ package com.developcollect.extra.javacc;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -33,8 +30,21 @@ public class CcUtil {
         }
 
         // 执行解析
-        Map<ClassAndMethod, CallInfo> result = new HashSet<>(classAndMethods).stream()
-                .collect(Collectors.toMap(cm -> cm, cm -> parser.parse(cm.getJavaClass(), cm.getMethod())));
+        Map<ClassAndMethod, CallInfo> result = new HashMap<>(classAndMethods.size());
+        int size = classAndMethods.size();
+        int count = 0;
+        for (ClassAndMethod cm : classAndMethods) {
+            if (result.containsKey(cm)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}/{}] 解析 {} 已存在解析结果，跳过。", ++count, size, cm);
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}/{}] 解析 {}", ++count, size, cm);
+                }
+                result.put(cm, parser.parse(cm.getJavaClass(), cm.getMethod()));
+            }
+        }
 
         return result;
     }

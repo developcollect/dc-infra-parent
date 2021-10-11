@@ -2,11 +2,13 @@ package com.developcollect.extra.javacc;
 
 import cn.hutool.core.util.StrUtil;
 import org.apache.bcel.Const;
+import org.apache.bcel.Repository;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.InvokeInstruction;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
+import org.apache.bcel.util.ClassQueue;
 
 import java.io.File;
 import java.io.IOException;
@@ -355,6 +357,75 @@ class CcSupport {
         return null;
     }
 
+    public static boolean implementationOf(JavaClass jc, JavaClass inter) {
+        if (!inter.isInterface()) {
+            throw new IllegalArgumentException(inter.getClassName() + " is no interface");
+        }
+        if (inter.equals(jc)) {
+            return true;
+        }
+
+        final JavaClass[] super_interfaces = getAllInterfaces(jc);
+        for (final JavaClass super_interface : super_interfaces) {
+            if (super_interface.equals(inter)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static JavaClass[] getAllInterfaces(JavaClass jc) {
+        final ClassQueue queue = new ClassQueue();
+        final Set<JavaClass> allInterfaces = new TreeSet<>();
+        queue.enqueue(jc);
+        while (!queue.empty()) {
+            final JavaClass clazz = queue.dequeue();
+            if (clazz == null) {
+                continue;
+            }
+            final JavaClass souper = getSuperClass(clazz);
+            final JavaClass[] _interfaces = getInterfaces(clazz);
+            if (clazz.isInterface()) {
+                allInterfaces.add(clazz);
+            } else {
+                if (souper != null) {
+                    queue.enqueue(souper);
+                }
+            }
+            for (final JavaClass _interface : _interfaces) {
+                queue.enqueue(_interface);
+            }
+        }
+        return allInterfaces.toArray(new JavaClass[allInterfaces.size()]);
+    }
+
+    private static  JavaClass getSuperClass(JavaClass jc) {
+        if ("java.lang.Object".equals(jc.getClassName())) {
+            return null;
+        }
+
+        return loadClassMayNull(jc.getRepository(), jc.getSuperclassName());
+
+    }
+
+    public static JavaClass[] getInterfaces(JavaClass jc)  {
+        final String[] _interfaces = jc.getInterfaceNames();
+        final JavaClass[] classes = new JavaClass[_interfaces.length];
+        for (int i = 0; i < _interfaces.length; i++) {
+            classes[i] = loadClassMayNull(jc.getRepository(), _interfaces[i]);
+        }
+        return classes;
+    }
+
+
+    public static JavaClass loadClassMayNull(org.apache.bcel.util.Repository repository, String classname) {
+        try {
+            return repository.loadClass(classname);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
 
     private static class DeepWrapper<T> {
         int deep;

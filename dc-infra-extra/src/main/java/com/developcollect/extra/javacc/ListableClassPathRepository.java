@@ -100,12 +100,7 @@ public class ListableClassPathRepository extends ClassPathRepository implements 
                 if (jc.equals(superClass)) {
                     return false;
                 }
-                try {
-                    return jc.implementationOf(superClass);
-                } catch (ClassNotFoundException e) {
-                    LambdaUtil.raise(e);
-                }
-                return false;
+                return CcSupport.implementationOf(jc, superClass);
             });
         } else {
             return scanClasses(jc -> {

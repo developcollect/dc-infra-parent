@@ -241,10 +241,29 @@ public class CallChainParserTest {
                 .collect(Collectors.toList());
 
 
-        for (String s : list) {
-            System.out.println(s);
-        }
+        test_cy3(list);
 
+
+    }
+
+
+    @Test
+    public void test_cy2() {
+        // region cc
+
+        List<String> cc = Arrays.asList(
+                "D:\\code\\cy\\bps\\bps-api\\target\\classes", 
+                "D:\\code\\cy\\app-front\\target\\classes", 
+                "D:\\code\\cy\\bps\\bps-core\\target\\classes"
+        );
+
+        // endregion
+
+        test_cy3(cc);
+    }
+
+
+    private void test_cy3(List<String> list) {
         Map<ClassAndMethod, CallInfo> chainMap = CcUtil.parseChain(
                 list,
                 cm -> {
@@ -260,7 +279,7 @@ public class CallChainParserTest {
                     CallInfo.Call caller = ci.getCaller();
                     MethodInfo methodInfo = caller.getMethodInfo();
                     String callerClassName = methodInfo.getClassName();
-                    return callerClassName.startsWith("com.bs.") ;
+                    return callerClassName.startsWith("com.bs.");
                 },
                 (repo, superClass) -> {
                     // 只对本项目中的接口进行实现类查找
@@ -273,5 +292,4 @@ public class CallChainParserTest {
 
         CcSupport.printChainMap(chainMap);
     }
-
 }
