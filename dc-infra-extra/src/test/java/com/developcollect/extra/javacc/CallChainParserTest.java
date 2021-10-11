@@ -252,9 +252,29 @@ public class CallChainParserTest {
         // region cc
 
         List<String> cc = Arrays.asList(
-                "D:\\code\\cy\\bps\\bps-api\\target\\classes", 
-                "D:\\code\\cy\\app-front\\target\\classes", 
-                "D:\\code\\cy\\bps\\bps-core\\target\\classes"
+                "D:\\code\\cy\\bps\\bps-api\\target\\classes",
+                "D:\\code\\cy\\app-front\\target\\classes",
+                "D:\\code\\cy\\bps\\bps-core\\target\\classes",
+
+                "D:\\mvnrepo\\com\\bs\\rms\\bs-analytics-api\\1.0.2-SNAPSHOT\\bs-analytics-api-1.0.2-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\bss\\bs-bss-api\\2.0.0-SNAPSHOT\\bs-bss-api-2.0.0-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\pcr\\bs-pcr-api\\1.0.1-SNAPSHOT\\bs-pcr-api-1.0.1-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\cts\\bs-cts-api\\1.1.2-SNAPSHOT\\bs-cts-api-1.1.2-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\pcr\\bs-pcr-api\\1.0.0\\bs-pcr-api-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\rmq\\bs-rmq-client\\1.0.0\\bs-rmq-client-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\rls\\bs-rls-common\\1.0.0\\bs-rls-common-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\cif\\bs-cif-api\\1.0.5-SNAPSHOT\\bs-cif-api-1.0.5-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\ecw\\bs-ecw-api\\1.0.3-SNAPSHOT\\bs-ecw-api-1.0.3-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\bsx\\bs-bsx-scheduler-api\\1.0.0\\bs-bsx-scheduler-api-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\ntf\\bs-ntf-api\\1.0.0\\bs-ntf-api-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\ncc\\bs-ncc-api\\1.0.4-SNAPSHOT\\bs-ncc-api-1.0.4-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\bps\\bs-bps-api\\1.0.6-SNAPSHOT\\bs-bps-api-1.0.6-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\ncc\\bs-ncc-api\\1.1.4-SNAPSHOT\\bs-ncc-api-1.1.4-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\pcs\\bs-pcs-api\\1.0.1-SNAPSHOT\\bs-pcs-api-1.0.1-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\rls\\bs-rls-api\\1.0.0\\bs-rls-api-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\res\\bs-res-api\\1.0.0\\bs-res-api-1.0.0.jar",
+                "D:\\mvnrepo\\com\\bs\\rms\\bs-rms-front-api\\1.0.4-SNAPSHOT\\bs-rms-front-api-1.0.4-SNAPSHOT.jar",
+                "D:\\mvnrepo\\com\\bs\\bss\\bs-bss-api\\2.0.2-SNAPSHOT\\bs-bss-api-2.0.2-SNAPSHOT.jar"
         );
 
         // endregion
@@ -290,6 +310,6 @@ public class CallChainParserTest {
                 }
         );
 
-        CcSupport.printChainMap(chainMap);
+        CcSupport.printChainMap(chainMap, ci -> ci.getCallerSignature().startsWith("com.bs") && !CcSupport.isEmptyInitCallInfo(ci));
     }
 }

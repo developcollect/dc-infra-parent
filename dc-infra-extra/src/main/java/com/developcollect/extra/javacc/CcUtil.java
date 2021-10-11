@@ -44,6 +44,9 @@ public class CcUtil {
                 }
                 result.put(cm, parser.parse(cm.getJavaClass(), cm.getMethod()));
             }
+            if (count == 3) {
+                break;
+            }
         }
 
         return result;

@@ -1,6 +1,7 @@
 package com.developcollect.extra.javacc;
 
 import cn.hutool.core.util.StrUtil;
+import com.developcollect.core.utils.CollUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.Repository;
 import org.apache.bcel.classfile.*;
@@ -13,6 +14,7 @@ import org.apache.bcel.util.ClassQueue;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  *
@@ -283,13 +285,21 @@ class CcSupport {
     }
 
     public static void printChainMap(Map<ClassAndMethod, CallInfo> chainMap) {
+        printChainMap(chainMap, ci -> !isEmptyInitCallInfo(ci));
+    }
+
+    public static void printChainMap(Map<ClassAndMethod, CallInfo> chainMap, Predicate<CallInfo> printFilter) {
         for (Map.Entry<ClassAndMethod, CallInfo> entry : chainMap.entrySet()) {
-            printCallInfo(entry.getValue());
+            printCallInfo(entry.getValue(), printFilter);
             System.out.println("\n\n");
         }
     }
 
     public static void printCallInfo(CallInfo callInfo) {
+        printCallInfo(callInfo, ci -> !isEmptyInitCallInfo(ci));
+    }
+
+    public static void printCallInfo(CallInfo callInfo, Predicate<CallInfo> printFilter) {
         Stack<DeepWrapper<CallInfo>> stack = new Stack<>();
         stack.push(new DeepWrapper<>(1, callInfo));
         Map<String, Integer> printCount = new HashMap<>();
@@ -297,13 +307,17 @@ class CcSupport {
         while (!stack.isEmpty()) {
             DeepWrapper<CallInfo> tree = stack.pop();
             CallInfo ci = tree.value;
-            String methodSig = ci.getCaller().getMethodInfo().getMethodSignature();
+
+            String methodSig = ci.getCallerSignature();
             printCount.put(methodSig, printCount.getOrDefault(ci.getCaller().getMethodInfo().getMethodSignature(), 0) + 1);
 
             //先往栈中压入右节点，再压左节点，这样出栈就是先左节点后右节点了。
             if (printCount.getOrDefault(methodSig, 0) < 2) {
                 for (int i = ci.getCalleeList().size() - 1; i >= 0; i--) {
                     CallInfo child = ci.getCalleeList().get(i);
+                    if (!printFilter.test(child)) {
+                        continue;
+                    }
                     stack.push(new DeepWrapper<>(tree.deep + 1, child));
                 }
             }
@@ -316,6 +330,23 @@ class CcSupport {
             }
             System.out.printf("%5d %s%s\n", ci.getCaller().getLineNumber(), sb, ci.getCaller().getMethodInfo().getMethodSignature());
         }
+    }
+
+    public static boolean isEmptyInitCallInfo(CallInfo callInfo) {
+        if (METHOD_NAME_INIT.equals(callInfo.getCaller().getMethodInfo().getMethodName())) {
+            List<CallInfo> calleeList = callInfo.getCalleeList();
+            if (CollUtil.isEmpty(calleeList)) {
+                return true;
+            } else {
+                for (CallInfo info : calleeList) {
+                    if (!isEmptyInitCallInfo(info)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     static String fixClassFileName(String className) {
