@@ -1,10 +1,13 @@
 package com.developcollect.web.common.http;
 
-import java.io.IOException;
-
 public interface MutableRequest {
 
 
-    void setBody(byte[] bytes) throws IOException;
+    void setBody(byte[] bytes);
+
+
+    default void setBody(String body) {
+        setBody(body.getBytes());
+    }
 
 }
