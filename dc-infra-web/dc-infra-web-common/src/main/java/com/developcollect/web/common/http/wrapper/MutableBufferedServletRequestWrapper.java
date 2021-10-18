@@ -9,6 +9,9 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+/**
+ * 缓存报文，使报文可以重复读取
+ */
 public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrapper implements MutableRequest {
 
     private volatile byte[] buffer;
@@ -31,7 +34,7 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
     }
 
     @Override
-    public void setBody(byte[] bytes) throws IOException {
+    public void setBody(byte[] bytes) {
         this.buffer = bytes;
     }
 

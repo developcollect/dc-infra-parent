@@ -1,6 +1,8 @@
 package com.developcollect.core.utils;
 
 
+import cn.hutool.crypto.CryptoException;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -20,7 +22,7 @@ public class ZencrUtil {
      * @author zak
      * @date 2019/9/18 17:19
      **/
-    public static String encrypt(String key, String value) {
+    public static String encrypt(String key, String value) throws CryptoException {
         byte[] bytes = value.getBytes();
         int[] arr = new int[(int) Math.ceil(bytes.length / 4.0)];
         for (int i = 0, j = 0; i < bytes.length; i += 4, j++) {
@@ -55,9 +57,9 @@ public class ZencrUtil {
             }
             String str = Arrays.stream(r).map(String::valueOf).collect(Collectors.joining());
             return str;
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            throw new CryptoException(e);
         }
-        return null;
     }
 
     /**
@@ -69,9 +71,9 @@ public class ZencrUtil {
      * @author zak
      * @date 2019/9/18 17:19
      **/
-    public static String decrypt(String key, String value) throws Exception {
+    public static String decrypt(String key, String value) throws CryptoException {
         if (value.length() % 6 > 0) {
-            throw new Exception("内容被篡改");
+            throw new CryptoException("内容被篡改");
         }
         char[] chars = value.toCharArray();
 
@@ -94,7 +96,7 @@ public class ZencrUtil {
                 } else if (ch == '*') {
                     n = 9 + 26 + 26 + 2;
                 } else {
-                    throw new Exception("内容被篡改");
+                    throw new CryptoException("内容被篡改");
                 }
                 arr[j] = n;
             }
