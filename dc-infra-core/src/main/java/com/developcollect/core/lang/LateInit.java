@@ -6,7 +6,7 @@ import java.util.function.Supplier;
  * 延迟创建对象
  * @param <T>
  */
-public class LateInit<T> {
+public class LateInit<T> implements AutoCloseable {
 
     private final Supplier<T> supplier;
     private final Object lock = new Object();
@@ -26,5 +26,12 @@ public class LateInit<T> {
         }
 
         return ref;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (ref instanceof AutoCloseable) {
+            ((AutoCloseable) ref).close();
+        }
     }
 }
