@@ -21,11 +21,21 @@ public class LateInit<T> implements AutoCloseable {
             synchronized (lock) {
                 if (ref == null) {
                     ref = supplier.get();
+                    if (ref == null) {
+                        throw new IllegalArgumentException("supplier return null!");
+                    }
                 }
             }
         }
 
         return ref;
+    }
+
+    /**
+     * 是否已初始化
+     */
+    public boolean inited() {
+        return ref != null;
     }
 
     @Override
