@@ -34,7 +34,7 @@ public class LateInit<T> implements AutoCloseable {
     /**
      * 是否已初始化
      */
-    public boolean inited() {
+    public boolean hasInit() {
         return ref != null;
     }
 
