@@ -6,6 +6,7 @@ import cn.hutool.jwt.JWTUtil;
 import cn.hutool.jwt.JWTValidator;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
+import com.developcollect.core.utils.DateUtil;
 import com.developcollect.core.utils.StrUtil;
 import com.developcollect.web.security.oauth2.Token;
 import com.developcollect.web.security.oauth2.TokenRequest;
@@ -28,47 +29,62 @@ import java.util.stream.Collectors;
  */
 public class TokenProcessor {
 
-    private JWTSigner jwtSigner;
-    private long expires;
-    private long refreshExpires;
+    private static final String CLIENT_ID_PAYLOAD_NAME = "cid";
+    private static final String USERNAME_PAYLOAD_NAME = "u";
+    private static final String AUTHORITIES_PAYLOAD_NAME = "a";
+    private static final String USER_ID_PAYLOAD_NAME = "uid";
+
+    private final JWTSigner jwtSigner;
+    private final int expires;
+    private final int refreshExpires;
 
 
     /**
      * @param key 加密和验签的秘钥
      */
     public TokenProcessor(String key) {
-        this.jwtSigner = JWTSignerUtil.hs256(Base64.decode(key));
-        this.expires = 2 * 60 * 60 * 1000;
-        this.refreshExpires = 3 * 60 * 60 * 1000;
+        this(key, 2 * 60 * 60, 3 * 60 * 60);
+    }
+
+    public TokenProcessor(String key, int expires, int refreshExpires) {
+        this(JWTSignerUtil.hs256(Base64.decode(key)), expires, refreshExpires);
+    }
+
+    public TokenProcessor(JWTSigner jwtSigner, int expires, int refreshExpires) {
+        this.jwtSigner = jwtSigner;
+        this.expires = expires;
+        this.refreshExpires = refreshExpires;
     }
 
     public Token grantToken(TokenRequest tokenRequest, UserDetails userDetails) {
+        Date now = new Date();
+
         JWT accessTokenJwt = JWT.create()
-                .setPayload("clientId", tokenRequest.getClientId())
-                .setPayload("username", userDetails.getUsername())
-                .setPayload("authorities", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")))
-                .setExpiresAt(new Date(System.currentTimeMillis() + expires))
+                .setPayload(CLIENT_ID_PAYLOAD_NAME, tokenRequest.getClientId())
+                .setPayload(USERNAME_PAYLOAD_NAME, userDetails.getUsername())
+                .setPayload(AUTHORITIES_PAYLOAD_NAME, userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")))
+                .setExpiresAt(DateUtil.offsetSecond(now, expires))
                 .setSigner(jwtSigner);
 
         JWT refreshTokenJwt = JWT.create()
-                .setPayload("clientId", tokenRequest.getClientId())
-                .setPayload("username", userDetails.getUsername())
-                .setExpiresAt(new Date(System.currentTimeMillis() + refreshExpires))
+                .setPayload(CLIENT_ID_PAYLOAD_NAME, tokenRequest.getClientId())
+                .setPayload(USERNAME_PAYLOAD_NAME, userDetails.getUsername())
+                .setExpiresAt(DateUtil.offsetSecond(now, refreshExpires))
                 .setSigner(jwtSigner);
 
 
         if (userDetails instanceof IdUserDetails) {
             Object id = ((IdUserDetails<?>) userDetails).getId();
-            accessTokenJwt.setPayload("userId", String.valueOf(id));
-            refreshTokenJwt.setPayload("userId", String.valueOf(id));
+            accessTokenJwt.setPayload(USER_ID_PAYLOAD_NAME, String.valueOf(id));
+            refreshTokenJwt.setPayload(USER_ID_PAYLOAD_NAME, String.valueOf(id));
         }
 
 
         Token token = new Token();
         token.setAccessToken(accessTokenJwt.sign());
         token.setRefreshToken(refreshTokenJwt.sign());
-        token.setExpires(expires);
-        token.setRefreshExpires(refreshExpires);
+        token.setExpires((long) expires);
+        token.setRefreshExpires((long) refreshExpires);
 
         return token;
     }
@@ -89,8 +105,8 @@ public class TokenProcessor {
         // 从jwt中拿出userid，username，权限
         try {
             JWT jwt = JWTUtil.parseToken(token);
-            String username = jwt.getPayload("username").toString();
-            String authoritiesStr = jwt.getPayload("authorities").toString();
+            String username = jwt.getPayload("u").toString();
+            String authoritiesStr = jwt.getPayload("a").toString();
 
             List<SimpleGrantedAuthority> authorities;
             if (StrUtil.isNotBlank(authoritiesStr)) {
