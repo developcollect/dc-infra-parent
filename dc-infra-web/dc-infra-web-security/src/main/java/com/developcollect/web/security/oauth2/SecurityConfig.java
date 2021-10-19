@@ -74,7 +74,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     TokenProcessor tokenProcessor() {
-        return new TokenProcessor();
+        return new TokenProcessor("KNJIHQWESNXHHOIWHE98273NH98Y823H98HJKFAH8SDY1");
     }
 
     @Bean
