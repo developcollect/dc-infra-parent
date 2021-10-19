@@ -46,6 +46,11 @@
       <version>2.4.5</version>
       <optional>true</optional>
     </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
   </dependencies>
 
 
