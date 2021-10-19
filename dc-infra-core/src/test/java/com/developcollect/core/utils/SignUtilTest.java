@@ -2,6 +2,8 @@ package com.developcollect.core.utils;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
+import cn.hutool.crypto.asymmetric.RSA;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.junit.Test;
@@ -100,4 +102,23 @@ public class SignUtilTest {
     }
 
 
+    @Test
+    public void test_2() {
+        // rsa私钥
+        String rsaPrivateKey = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAJu27RTGVu9IJCH9R+yodLLHSH8KkkxV5elm++C2EXZbu5C6CPNqztUhkIbqRTELkDJgR/lhuCKVP05efWOGYtub+TurrCDxuqM06AM03dqz8Om0ia4WSCOjXVPyeabs821yX3Ctme2XT5D4kk4Agn7yr7KgscXJAuajXJuxeOM3AgMBAAECgYAQUq6rnNcEIlXXUku13TrOeuF4n80SP3bobqk8txlBhQA2fanuimXAJdKWsfwq1gF5pmolFD9PMMIAHxuZ0T6PiLp2RINyg5hoYeX3qHLCg4zTtthzlPHYSumo6XX4tAUTzLu5vdUmJfxm2I9iqxJYL1vii6YW4ZtEetJebS2i0QJBAN/FVfr4erKLa5duHsSdvij2DeUId0nuI5N21kwfgQ6/f8k4LnmqL4dmdpjdkLyDgZM0wrtSvYfiAKvJNMrkAqMCQQCyJEizPw0OHIMGZaM2QL8TFzTO0+xLN78L4K8rIE8U6e4KWqocIRR4mbNqlAz+DVOclvZ4wwcSxGg8oXDneTpdAkA9BcN8vWY4amzcztr1I09IPFFts/FT5+0ruayW9cBsFSzz4q5J3282rWqKJWHjBrm/OxQfoWCuPaORNT2AVs2hAkAdkB/wfzovaVPlL+DSFBShmmxNFqZUJUAzPGpVgdsd4WR7m2g3mtXG3dsEiOVPE+8YQYVNrS/zUVzrEu+lulyRAkEAj2nefO1KU+GvKBeqJ5IzNcfWUPZec85GR1GIBNUFiRLKfaiqiuDQEWcnqnYwWPbuzgplLLYo8D6KnkAf3AzvTA==";
+        // rsa公钥
+        String rsaPublicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCbtu0UxlbvSCQh/UfsqHSyx0h/CpJMVeXpZvvgthF2W7uQugjzas7VIZCG6kUxC5AyYEf5YbgilT9OXn1jhmLbm/k7q6wg8bqjNOgDNN3as/DptImuFkgjo11T8nmm7PNtcl9wrZntl0+Q+JJOAIJ+8q+yoLHFyQLmo1ybsXjjNwIDAQAB";
+
+        String content = "五类晒";
+        RSA rsa = SecureUtil.rsa(rsaPrivateKey, rsaPublicKey);
+
+
+        // 私钥加密，公钥解密
+        System.out.println(new String(rsa.decrypt(rsa.encrypt(content, KeyType.PrivateKey), KeyType.PublicKey)));
+
+        // 公钥加密，私钥解密
+        System.out.println(new String(rsa.decrypt(rsa.encrypt(content, KeyType.PublicKey), KeyType.PrivateKey)));
+
+
+    }
 }
