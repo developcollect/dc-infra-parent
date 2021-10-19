@@ -105,8 +105,8 @@ public class TokenProcessor {
         // 从jwt中拿出userid，username，权限
         try {
             JWT jwt = JWTUtil.parseToken(token);
-            String username = jwt.getPayload("u").toString();
-            String authoritiesStr = jwt.getPayload("a").toString();
+            String username = jwt.getPayload(USERNAME_PAYLOAD_NAME).toString();
+            String authoritiesStr = jwt.getPayload(AUTHORITIES_PAYLOAD_NAME).toString();
 
             List<SimpleGrantedAuthority> authorities;
             if (StrUtil.isNotBlank(authoritiesStr)) {
