@@ -18,25 +18,38 @@
   </properties>
 
   <dependencies>
-
-
-
     <dependency>
       <groupId>com.developcollect</groupId>
       <artifactId>dc-infra-web-common</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
-
     <dependency>
       <groupId>com.developcollect</groupId>
       <artifactId>dc-infra-core</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.developcollect</groupId>
+      <artifactId>dc-infra-cache</artifactId>
+      <version>${project.parent.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.developcollect</groupId>
+      <artifactId>common-notify</artifactId>
+      <version>1.0</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>okio</artifactId>
+          <groupId>com.squareup.okio</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
-      <version>2.4.3</version>
+      <version>2.4.5</version>
       <optional>true</optional>
     </dependency>
 

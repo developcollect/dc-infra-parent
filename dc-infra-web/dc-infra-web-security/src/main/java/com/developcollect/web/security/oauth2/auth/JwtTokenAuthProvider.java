@@ -18,8 +18,8 @@ public class JwtTokenAuthProvider implements AuthenticationProvider {
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         JwtAuthenticationToken jwtAuthenticationToken = (JwtAuthenticationToken) authentication;
 
-        if (false == tokenProcessor.verify(jwtAuthenticationToken.getPrincipal().toString())) {
-            throw new BadCredentialsException("invalid token");
+        if (!tokenProcessor.verify(jwtAuthenticationToken.getPrincipal().toString())) {
+            throw new BadCredentialsException("无效的Token");
         }
 
         Authentication auth = tokenProcessor.loadAuthentication(jwtAuthenticationToken.getPrincipal().toString());

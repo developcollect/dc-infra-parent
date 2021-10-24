@@ -1,57 +1,70 @@
 package com.developcollect.web.security.oauth2;
 
+
+import com.developcollect.core.web.common.R;
+import com.developcollect.extra.servlet.ServletUtil;
 import com.developcollect.web.security.oauth2.auth.JwtTokenAuthProvider;
 import com.developcollect.web.security.oauth2.auth.TokenAuthenticationProcessingFilter;
 import com.developcollect.web.security.oauth2.auth.TokenProcessor;
 import com.developcollect.web.security.oauth2.refresh.RefreshTokenGranter;
 import com.developcollect.web.security.oauth2.usernaem.UsernameTokenGranter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Arrays;
 
 
-@Configuration
-@Order
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+/**
+ * 不走自动配置，只是个配置示例
+ */
+public class DcSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private UserDetailsService userDetailsService;
+    @Autowired
+    private JwtTokenAuthProvider jwtTokenAuthProvider;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AuthenticationEntryPoint authenticationEntryPoint;
+    @Autowired
+    private AccessDeniedHandler accessDeniedHandler;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService)
-                .passwordEncoder(passwordEncoder())
+                .passwordEncoder(passwordEncoder)
                 .and()
-                .authenticationProvider(jwtTokenAuthProvider());
+                .authenticationProvider(jwtTokenAuthProvider);
     }
 
+//    @Override
+//    public void configure(WebSecurity web) throws Exception {
+//        web.ignoring()
+//                .antMatchers(HttpMethod.POST, "/pc/members/register");
+//    }
+
     @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
+    protected void configure(HttpSecurity http) throws Exception {
+        // 使用自定义的过滤器，拦截Token
         TokenAuthenticationProcessingFilter tokenAuthenticationProcessingFilter = new TokenAuthenticationProcessingFilter();
         tokenAuthenticationProcessingFilter.setAuthenticationManager(authenticationManager());
-        tokenAuthenticationProcessingFilter.setAuthenticationEntryPoint(authenticationEntryPoint());
+        tokenAuthenticationProcessingFilter.setAuthenticationEntryPoint(authenticationEntryPoint);
+        tokenAuthenticationProcessingFilter.setAuthenticationDetailsSource(new WebAuthenticationDetailsSource());
 
-        // 禁用缓存
-        httpSecurity.headers().cacheControl();
-
-        httpSecurity
+        http
                 .csrf().disable()
                 // 基于token，所以不需要session
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
@@ -60,8 +73,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/oauth/token", "/oauth/refresh").permitAll()
                 // 除上面外的所有请求全部需要鉴权认证
                 .anyRequest().authenticated();
-        httpSecurity
+
+        // 加入自定义过滤器
+        http
                 .addFilterBefore(tokenAuthenticationProcessingFilter, AbstractPreAuthenticatedProcessingFilter.class);
+
+        // 异常处理
+        http.exceptionHandling()
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler);
 
     }
 
@@ -73,43 +93,50 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     @Bean
-    TokenProcessor tokenProcessor() {
-        return new TokenProcessor("KNJIHQWESNXHHOIWHE98273NH98Y823H98HJKFAH8SDY1");
+    TokenProcessor tokenProcessor(@Autowired(required = false) @Qualifier("dcSecurityTokenKey") String tokenKey) {
+        if (tokenKey == null) {
+            tokenKey = "ulxzsy0f6zhlfv3454sg3pwmcd42jm8x";
+        }
+        return new TokenProcessor(tokenKey);
     }
 
     @Bean
-    JwtTokenAuthProvider jwtTokenAuthProvider() {
+    JwtTokenAuthProvider jwtTokenAuthProvider(TokenProcessor tokenProcessor) {
         JwtTokenAuthProvider jwtTokenAuthProvider = new JwtTokenAuthProvider();
-        jwtTokenAuthProvider.setTokenProcessor(tokenProcessor());
+        jwtTokenAuthProvider.setTokenProcessor(tokenProcessor);
         return jwtTokenAuthProvider;
     }
 
 
     @Bean
-    TokenGranter tokenGranter() {
+    TokenGranter tokenGranter(TokenProcessor tokenProcessor) {
         UsernameTokenGranter usernameTokenGranter = new UsernameTokenGranter();
-        usernameTokenGranter.setPasswordEncoder(passwordEncoder());
-        usernameTokenGranter.setTokenProcessor(tokenProcessor());
+        usernameTokenGranter.setPasswordEncoder(passwordEncoder);
+        usernameTokenGranter.setTokenProcessor(tokenProcessor);
         usernameTokenGranter.setUserDetailsService(userDetailsService);
 
         RefreshTokenGranter refreshTokenGranter = new RefreshTokenGranter();
-        refreshTokenGranter.setTokenProcessor(tokenProcessor());
+        refreshTokenGranter.setTokenProcessor(tokenProcessor);
         refreshTokenGranter.setUserDetailsService(userDetailsService);
-
 
         return new CompressTokenGranter(Arrays.asList(usernameTokenGranter, refreshTokenGranter));
     }
 
     @Bean
     AuthenticationEntryPoint authenticationEntryPoint() {
-        return new AuthenticationEntryPoint() {
-            @Override
-            public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-                response.setStatus(401);
-                response.setContentType("application/json;charset=utf8");
-                response.getWriter().println("{\"code\": 401, \"message\": \"" + authException.getMessage() + "\"}");
-            }
+        return (request, response, authException) -> {
+            response.setStatus(401);
+            ServletUtil.writeJson(response, R.build(401, authException.getMessage()));
         };
     }
-    // 通过Override其他方法实现对web安全的定制
+
+    @Bean
+    AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(403);
+            ServletUtil.writeJson(response, R.build(403, accessDeniedException.getMessage()));
+        };
+    }
+
 }
+

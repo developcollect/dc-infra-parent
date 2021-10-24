@@ -1,8 +1,10 @@
 package com.developcollect.web.security.oauth2.auth;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -24,11 +26,15 @@ import java.io.IOException;
 @Slf4j
 public class TokenAuthenticationProcessingFilter implements Filter {
 
+    @Setter
     private AuthenticationManager authenticationManager;
+    @Setter
     private TokenExtractor tokenExtractor = new BearerTokenExtractor();
     private boolean stateless = true;
-
+    @Setter
     private AuthenticationEntryPoint authenticationEntryPoint;
+    @Setter
+    private AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource;
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
@@ -48,9 +54,9 @@ public class TokenAuthenticationProcessingFilter implements Filter {
                 }
             } else {
                 request.setAttribute("ACCESS_TOKEN_VALUE", authentication.getPrincipal());
-                if (authentication instanceof AbstractAuthenticationToken) {
+                if (authenticationDetailsSource != null && authentication instanceof AbstractAuthenticationToken) {
                     AbstractAuthenticationToken needsDetails = (AbstractAuthenticationToken) authentication;
-//                needsDetails.setDetails(authenticationDetailsSource.buildDetails(request));
+                    needsDetails.setDetails(authenticationDetailsSource.buildDetails(request));
                 }
                 Authentication authResult = authenticationManager.authenticate(authentication);
 
@@ -79,19 +85,9 @@ public class TokenAuthenticationProcessingFilter implements Filter {
     }
 
 
-    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
-    }
-
-    public void setAuthenticationEntryPoint(AuthenticationEntryPoint authenticationEntryPoint) {
-        this.authenticationEntryPoint = authenticationEntryPoint;
-    }
 
     private boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
-            return false;
-        }
-        return true;
+        return authentication != null && !(authentication instanceof AnonymousAuthenticationToken);
     }
 }

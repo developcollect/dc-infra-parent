@@ -8,7 +8,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -16,7 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 
-@RestController
+/**
+ * 不走自动配置，只是个配置示例
+ */
 public class SecurityController {
 
     @Autowired
@@ -49,9 +50,5 @@ public class SecurityController {
         authenticationEntryPoint.commence(request, response, exception);
     }
 
-
-    public static void main(String[] args) {
-
-    }
 
 }

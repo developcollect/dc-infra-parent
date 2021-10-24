@@ -1,6 +1,7 @@
 package com.developcollect.web.security.oauth2.auth;
 
 import cn.hutool.core.codec.Base64;
+import cn.hutool.core.exceptions.ValidateException;
 import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTUtil;
 import cn.hutool.jwt.JWTValidator;
@@ -10,6 +11,7 @@ import com.developcollect.core.utils.DateUtil;
 import com.developcollect.core.utils.StrUtil;
 import com.developcollect.web.security.oauth2.Token;
 import com.developcollect.web.security.oauth2.TokenRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,16 +29,17 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @date 2021/3/9 10:45
  */
+@Slf4j
 public class TokenProcessor {
 
-    private static final String CLIENT_ID_PAYLOAD_NAME = "cid";
-    private static final String USERNAME_PAYLOAD_NAME = "u";
-    private static final String AUTHORITIES_PAYLOAD_NAME = "a";
-    private static final String USER_ID_PAYLOAD_NAME = "uid";
+    protected static final String CLIENT_ID_PAYLOAD_NAME = "cid";
+    protected static final String USERNAME_PAYLOAD_NAME = "u";
+    protected static final String AUTHORITIES_PAYLOAD_NAME = "a";
+    protected static final String USER_ID_PAYLOAD_NAME = "uid";
 
-    private final JWTSigner jwtSigner;
-    private final int expires;
-    private final int refreshExpires;
+    protected final JWTSigner jwtSigner;
+    protected final int expires;
+    protected final int refreshExpires;
 
 
     /**
@@ -90,14 +93,23 @@ public class TokenProcessor {
     }
 
     /**
-     * 这里只对token进行验签，不对有效期做验证
+     * 验证token，首先对token验签，然后验证有效期
      *
      * @param token token
-     * @return
      */
     public boolean verify(String token) {
-        JWTValidator.of(token).validateAlgorithm(jwtSigner);
-        return JWTUtil.verify(token, jwtSigner);
+        try {
+            JWTValidator.of(token)
+                    .validateAlgorithm(jwtSigner)
+                    .validateDate(DateUtil.date());
+
+            return true;
+        } catch (Exception e) {
+            if (!(e instanceof ValidateException)) {
+                log.error("验证token时出现异常", e);
+            }
+            return false;
+        }
     }
 
 

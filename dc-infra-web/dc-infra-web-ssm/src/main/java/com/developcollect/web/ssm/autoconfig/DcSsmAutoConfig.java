@@ -2,7 +2,6 @@ package com.developcollect.web.ssm.autoconfig;
 
 import com.developcollect.web.ssm.config.MybatisPlusPageMethodArgumentResolver;
 import com.developcollect.web.ssm.export.ExportAspect;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
