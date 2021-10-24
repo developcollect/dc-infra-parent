@@ -25,14 +25,21 @@ public class SecurityUtil {
      * 获取当前登录的用户名, 如果当前没有登录，则返回null
      */
     public static String getUsername() {
-        return Optional.ofNullable(getUserDetail()).map(User::getUsername).orElse(null);
+        return getUserDetailOptional().map(User::getUsername).orElse(null);
     }
 
     /**
      * 获取当前的用户id, 如果当前没有登录，则返回null
      */
     public static Long getUserId() {
-        return Optional.ofNullable(getUserDetail()).map(IdUserDetail::getId).orElse(null);
+        return getUserDetailOptional().map(DcSecurityUser::getUserId).orElse(null);
+    }
+
+    /**
+     * 获取当前的ClientId, 如果当前没有登录，则返回null
+     */
+    public static String getClientId() {
+        return getUserDetailOptional().map(DcSecurityUser::getClientId).orElse(null);
     }
 
     /**
@@ -40,7 +47,7 @@ public class SecurityUtil {
      * 如果当前没有登录，则返回系统用户名
      */
     public static String getUsernameOrSystem() {
-        return Optional.ofNullable(getUserDetail()).map(User::getUsername).orElse(SYSTEM_USER_NAME);
+        return getUserDetailOptional().map(User::getUsername).orElse(SYSTEM_USER_NAME);
     }
 
     /**
@@ -48,7 +55,7 @@ public class SecurityUtil {
      * 如果当前没有登录，则返回系统用户id(1)
      */
     public static long getUserIdOrSystem() {
-        return Optional.ofNullable(getUserDetail()).map(IdUserDetail::getId).orElse(SYSTEM_USER_ID);
+        return getUserDetailOptional().map(DcSecurityUser::getUserId).orElse(SYSTEM_USER_ID);
     }
 
     /**
@@ -57,7 +64,7 @@ public class SecurityUtil {
      * 注意：返回null才是没有登录，如果返回的是空集合，那表示当前用户没有权限
      */
     public static List<String> getRoles() {
-        return Optional.ofNullable(getUserDetail())
+        return getUserDetailOptional()
                 .map(user ->
                         user.getAuthorities().stream()
                                 .map(GrantedAuthority::getAuthority)
@@ -83,11 +90,15 @@ public class SecurityUtil {
     }
 
 
-    public static IdUserDetail getUserDetail() {
-        return Optional.ofNullable(getDelegate()).map(SecurityDelegate::getUserDetail).orElse(null);
+    public static DcSecurityUser getUserDetail() {
+        return getUserDetailOptional().orElse(null);
     }
 
-    protected static SecurityDelegate getDelegate() {
+    public static <T extends DcSecurityUser> Optional<T> getUserDetailOptional() {
+        return Optional.ofNullable(getDelegate()).map(dele -> (T) dele.getUserDetail());
+    }
+
+    protected static <T extends DcSecurityUser> SecurityDelegate<T> getDelegate() {
         return delegate;
     }
 }

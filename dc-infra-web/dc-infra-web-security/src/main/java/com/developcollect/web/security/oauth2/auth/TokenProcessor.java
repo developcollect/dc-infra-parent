@@ -9,6 +9,7 @@ import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
 import com.developcollect.core.utils.DateUtil;
 import com.developcollect.core.utils.StrUtil;
+import com.developcollect.web.common.security.DcSecurityUser;
 import com.developcollect.web.security.oauth2.Token;
 import com.developcollect.web.security.oauth2.TokenRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -76,8 +77,8 @@ public class TokenProcessor {
                 .setSigner(jwtSigner);
 
 
-        if (userDetails instanceof IdUserDetails) {
-            Object id = ((IdUserDetails<?>) userDetails).getId();
+        if (userDetails instanceof DcSecurityUser) {
+            Long id = ((DcSecurityUser) userDetails).getUserId();
             accessTokenJwt.setPayload(USER_ID_PAYLOAD_NAME, String.valueOf(id));
             refreshTokenJwt.setPayload(USER_ID_PAYLOAD_NAME, String.valueOf(id));
         }
@@ -117,6 +118,23 @@ public class TokenProcessor {
         // 从jwt中拿出userid，username，权限
         try {
             JWT jwt = JWTUtil.parseToken(token);
+            Long userId = null;
+            String clientId = null;
+            Object userIdPayload = jwt.getPayload(USER_ID_PAYLOAD_NAME);
+            if (userIdPayload != null) {
+                if (userIdPayload instanceof Number) {
+                    userId = ((Number) userIdPayload).longValue();
+                } else {
+                    try {
+                        userId = Long.parseLong(userIdPayload.toString());
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+            Object clientIdPayload = jwt.getPayload(CLIENT_ID_PAYLOAD_NAME);
+            if (clientIdPayload != null) {
+                clientId = clientIdPayload.toString();
+            }
             String username = jwt.getPayload(USERNAME_PAYLOAD_NAME).toString();
             String authoritiesStr = jwt.getPayload(AUTHORITIES_PAYLOAD_NAME).toString();
 
@@ -127,10 +145,11 @@ public class TokenProcessor {
                 authorities = Collections.emptyList();
             }
 
-            JwtAuthenticationToken authenticationToken = new JwtAuthenticationToken(username, null, authorities);
+            DcSecurityUser principal = new DcSecurityUser(userId, clientId, username, "", authorities);
+            JwtAuthenticationToken authenticationToken = new JwtAuthenticationToken(principal, null, authorities);
             return authenticationToken;
         } catch (Exception e) {
-            throw new BadCredentialsException("invalid token");
+            throw new BadCredentialsException("无效的token");
         }
     }
 
