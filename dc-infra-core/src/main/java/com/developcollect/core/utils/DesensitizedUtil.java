@@ -27,11 +27,33 @@ public class DesensitizedUtil extends cn.hutool.core.util.DesensitizedUtil {
         return desensitized(num, front, end);
     }
 
+
+    /**
+     * [公司开户银行联号] 公司开户银行联行号,显示前两位，其他用星号隐藏，每位1个星号<例子:12********>
+     */
+    public static String cnapsCode(final String code) {
+        if (StrUtil.isBlank(code)) {
+            return "";
+        }
+        return desensitized(code, 2, 0, -1);
+    }
+
+    /**
+     * 【密码】直接返回 ********
+     *
+     * @param password 密码
+     * @return 脱敏后的密码
+     */
+    public static String password(String password) {
+        return "********";
+    }
+
     /**
      * 通用的脱敏方法
-     * @param str 字符串
-     * @param front     保留：前面的front位数；从1开始
-     * @param end       保留：后面的end位数；从1开始
+     *
+     * @param str   字符串
+     * @param front 保留：前面的front位数；从1开始
+     * @param end   保留：后面的end位数；从1开始
      */
     public static String desensitized(String str, int front, int end) {
         return desensitized(str, front, end, -1);

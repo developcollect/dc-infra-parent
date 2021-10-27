@@ -1,6 +1,5 @@
 package com.developcollect.cache;
 
-import com.developcollect.core.lang.SystemClock;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
