@@ -41,11 +41,11 @@ public class DesensitizeSerializer extends JsonSerializer<String> implements Con
                 break;
             }
             case MOBILE_PHONE: {
-                jsonGenerator.writeString(DesensitizedUtil.mobilePhone(s));
+                jsonGenerator.writeString(DesensitizedUtil.desensitized(s, 2, 3));
                 break;
             }
             case ADDRESS: {
-                jsonGenerator.writeString(DesensitizedUtil.address(s, 6));
+                jsonGenerator.writeString(DesensitizedUtil.address(s, 8));
                 break;
             }
             case EMAIL: {
