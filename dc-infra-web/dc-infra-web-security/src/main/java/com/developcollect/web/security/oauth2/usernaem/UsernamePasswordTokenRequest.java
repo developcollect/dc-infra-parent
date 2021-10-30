@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
  * @date 2021/3/9 11:04
  */
 @Data
-public class UsernameTokenRequest implements TokenRequest, CredentialsContainer {
+public class UsernamePasswordTokenRequest implements TokenRequest, CredentialsContainer {
 
     private String grantType;
     private String clientId;
@@ -22,8 +22,8 @@ public class UsernameTokenRequest implements TokenRequest, CredentialsContainer 
     private HttpServletRequest request;
 
 
-    public static UsernameTokenRequest of(HttpServletRequest request) {
-        UsernameTokenRequest accessTokenRequest = new UsernameTokenRequest();
+    public static UsernamePasswordTokenRequest of(HttpServletRequest request) {
+        UsernamePasswordTokenRequest accessTokenRequest = new UsernamePasswordTokenRequest();
         accessTokenRequest.setClientId(request.getParameter("clientId"));
         accessTokenRequest.setGrantType(request.getParameter("grantType"));
         accessTokenRequest.setUsername(request.getParameter("username"));

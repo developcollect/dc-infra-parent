@@ -1,7 +1,7 @@
 package com.developcollect.web.security.oauth2;
 
 import com.developcollect.web.security.oauth2.refresh.RefreshTokenRequest;
-import com.developcollect.web.security.oauth2.usernaem.UsernameTokenRequest;
+import com.developcollect.web.security.oauth2.usernaem.UsernamePasswordTokenRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -29,7 +29,7 @@ public class SecurityController {
 
     @PostMapping("/oauth/token")
     public Token login(HttpServletRequest request) {
-        UsernameTokenRequest accessTokenRequest = UsernameTokenRequest.of(request);
+        UsernamePasswordTokenRequest accessTokenRequest = UsernamePasswordTokenRequest.of(request);
         if (!tokenGranter.support(accessTokenRequest)) {
             throw new BadCredentialsException("不支持 " + accessTokenRequest.getGrantType());
         }

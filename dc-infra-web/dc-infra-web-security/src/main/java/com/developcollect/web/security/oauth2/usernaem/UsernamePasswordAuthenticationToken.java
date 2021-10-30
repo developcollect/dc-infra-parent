@@ -11,7 +11,7 @@ import java.util.Collection;
  * @version 1.0
  * @date 2021/3/9 11:49
  */
-public class UsernameAuthenticationToken implements Authentication, CredentialsContainer {
+public class UsernamePasswordAuthenticationToken implements Authentication, CredentialsContainer {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return null;

@@ -9,9 +9,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-public class UsernameTokenGranter implements TokenGranter {
+public class UsernamePasswordTokenGranter implements TokenGranter {
 
-    private static final String GRANT_TYPE = "username";
+    private static final String GRANT_TYPE = "password";
 
     private PasswordEncoder passwordEncoder;
     private UserDetailsService userDetailsService;
@@ -31,7 +31,7 @@ public class UsernameTokenGranter implements TokenGranter {
 
     @Override
     public Token grant(TokenRequest tokenRequest) {
-        UsernameTokenRequest accessTokenRequest = (UsernameTokenRequest) tokenRequest;
+        UsernamePasswordTokenRequest accessTokenRequest = (UsernamePasswordTokenRequest) tokenRequest;
         UserDetails userDetails = userDetailsService.loadUserByUsername(accessTokenRequest.getUsername());
 
         // 首先验证密码
@@ -49,7 +49,7 @@ public class UsernameTokenGranter implements TokenGranter {
 
     @Override
     public boolean support(TokenRequest tokenRequest) {
-        return tokenRequest instanceof UsernameTokenRequest && getGrantType().equals(tokenRequest.getGrantType());
+        return tokenRequest instanceof UsernamePasswordTokenRequest && getGrantType().equals(tokenRequest.getGrantType());
     }
 
     @Override

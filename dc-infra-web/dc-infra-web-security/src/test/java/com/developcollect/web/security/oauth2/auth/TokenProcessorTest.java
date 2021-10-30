@@ -1,7 +1,7 @@
 package com.developcollect.web.security.oauth2.auth;
 
 import com.developcollect.web.security.oauth2.Token;
-import com.developcollect.web.security.oauth2.usernaem.UsernameTokenRequest;
+import com.developcollect.web.security.oauth2.usernaem.UsernamePasswordTokenRequest;
 import org.junit.Test;
 import org.springframework.security.core.userdetails.User;
 
@@ -13,7 +13,7 @@ public class TokenProcessorTest {
 
     @Test
     public void test_token() {
-        UsernameTokenRequest tokenRequest = new UsernameTokenRequest();
+        UsernamePasswordTokenRequest tokenRequest = new UsernamePasswordTokenRequest();
         tokenRequest.setClientId("clientId");
         User user = new User("137", "pass", Collections.emptyList());
         Token token = tokenProcessor.grantToken(tokenRequest, user);

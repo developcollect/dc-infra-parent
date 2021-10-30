@@ -9,7 +9,7 @@ import org.springframework.security.core.AuthenticationException;
  * @version 1.0
  * @date 2021/3/9 11:49
  */
-public class UsernameAuthenticationProvide implements AuthenticationProvider {
+public class UsernamePasswordAuthenticationProvide implements AuthenticationProvider {
 
 
     @Override
@@ -19,7 +19,7 @@ public class UsernameAuthenticationProvide implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return UsernameAuthenticationToken.class.isAssignableFrom(authentication);
+        return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 
 

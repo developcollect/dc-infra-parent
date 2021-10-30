@@ -7,7 +7,7 @@ import com.developcollect.web.security.oauth2.auth.JwtTokenAuthProvider;
 import com.developcollect.web.security.oauth2.auth.TokenAuthenticationProcessingFilter;
 import com.developcollect.web.security.oauth2.auth.TokenProcessor;
 import com.developcollect.web.security.oauth2.refresh.RefreshTokenGranter;
-import com.developcollect.web.security.oauth2.usernaem.UsernameTokenGranter;
+import com.developcollect.web.security.oauth2.usernaem.UsernamePasswordTokenGranter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -110,16 +110,16 @@ public class DcSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     TokenGranter tokenGranter(TokenProcessor tokenProcessor) {
-        UsernameTokenGranter usernameTokenGranter = new UsernameTokenGranter();
-        usernameTokenGranter.setPasswordEncoder(passwordEncoder);
-        usernameTokenGranter.setTokenProcessor(tokenProcessor);
-        usernameTokenGranter.setUserDetailsService(userDetailsService);
+        UsernamePasswordTokenGranter usernamePasswordTokenGranter = new UsernamePasswordTokenGranter();
+        usernamePasswordTokenGranter.setPasswordEncoder(passwordEncoder);
+        usernamePasswordTokenGranter.setTokenProcessor(tokenProcessor);
+        usernamePasswordTokenGranter.setUserDetailsService(userDetailsService);
 
         RefreshTokenGranter refreshTokenGranter = new RefreshTokenGranter();
         refreshTokenGranter.setTokenProcessor(tokenProcessor);
         refreshTokenGranter.setUserDetailsService(userDetailsService);
 
-        return new CompressTokenGranter(Arrays.asList(usernameTokenGranter, refreshTokenGranter));
+        return new CompressTokenGranter(Arrays.asList(usernamePasswordTokenGranter, refreshTokenGranter));
     }
 
     @Bean
