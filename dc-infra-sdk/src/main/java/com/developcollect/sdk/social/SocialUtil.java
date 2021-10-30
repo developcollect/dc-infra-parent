@@ -1,4 +1,4 @@
-package com.developcollect.authorization.social;
+package com.developcollect.sdk.social;
 
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;

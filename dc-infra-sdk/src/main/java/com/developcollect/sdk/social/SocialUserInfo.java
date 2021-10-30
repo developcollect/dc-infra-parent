@@ -1,4 +1,4 @@
-package com.developcollect.authorization.social;
+package com.developcollect.sdk.social;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
