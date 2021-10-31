@@ -14,7 +14,24 @@ public class BufferedServletRequestFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        chain.doFilter(new MutableBufferedServletRequestWrapper((HttpServletRequest) request), response);
+        ServletRequest requestRef = request;
+        // 如果是application/json，则缓存
+        if (support(request)) {
+            requestRef = new MutableBufferedServletRequestWrapper((HttpServletRequest) request);
+        }
+        chain.doFilter(requestRef, response);
+    }
+
+    private boolean support(ServletRequest request) {
+        String contentType = request.getContentType();
+        if (contentType == null) {
+            return false;
+        }
+
+        if (contentType.toLowerCase().startsWith("application/json")) {
+            return true;
+        }
+        return false;
     }
 
     @Override

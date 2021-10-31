@@ -6,8 +6,10 @@ import com.developcollect.web.common.http.MutableRequest;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * 缓存报文，使报文可以重复读取
@@ -31,6 +33,11 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
     @Override
     public ServletInputStream getInputStream() {
         return new BufferedServletInputStream(buffer);
+    }
+
+    @Override
+    public BufferedReader getReader() {
+        return new BufferedReader(new InputStreamReader(getInputStream()));
     }
 
     @Override
