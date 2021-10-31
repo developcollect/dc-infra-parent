@@ -31,26 +31,21 @@ public class UsernamePasswordTokenGranter implements TokenGranter {
 
     @Override
     public Token grant(TokenRequest tokenRequest) {
-        UsernamePasswordTokenRequest accessTokenRequest = (UsernamePasswordTokenRequest) tokenRequest;
-        UserDetails userDetails = userDetailsService.loadUserByUsername(accessTokenRequest.getUsername());
+        String username = tokenRequest.getParameter("username");
+        String password = tokenRequest.getParameter("password");
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         // 首先验证密码
-        if (false == passwordEncoder.matches(accessTokenRequest.getPassword(), userDetails.getPassword())) {
+        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
             throw new BadCredentialsException("密码错误");
         }
-        accessTokenRequest.eraseCredentials();
 
         // 验证通过后颁发token
-        Token token = tokenProcessor.grantToken(accessTokenRequest, userDetails);
+        Token token = tokenProcessor.grantToken(tokenRequest, userDetails);
 
         return token;
     }
 
-
-    @Override
-    public boolean support(TokenRequest tokenRequest) {
-        return tokenRequest instanceof UsernamePasswordTokenRequest && getGrantType().equals(tokenRequest.getGrantType());
-    }
 
     @Override
     public String getGrantType() {

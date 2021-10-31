@@ -26,24 +26,23 @@ public class SmsTokenGranter implements TokenGranter {
 
     @Override
     public Token grant(TokenRequest tokenRequest) {
-        SmsTokenRequest accessTokenRequest = (SmsTokenRequest) tokenRequest;
-        validSmsCode(accessTokenRequest);
+        String mobile = tokenRequest.getParameter("mobile");
+        String code = tokenRequest.getParameter("code");
+        validSmsCode(mobile, code);
 
-        accessTokenRequest.eraseCredentials();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(accessTokenRequest.getMobile());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(mobile);
 
         // 验证通过后颁发token
-        Token token = tokenProcessor.grantToken(accessTokenRequest, userDetails);
+        Token token = tokenProcessor.grantToken(tokenRequest, userDetails);
 
         return token;
     }
 
-    private void validSmsCode(SmsTokenRequest accessTokenRequest) {
+    private void validSmsCode(String mobile, String code) {
         try {
-            String mobile = accessTokenRequest.getMobile();
             // todo 记录匹配错误次数，超过5次在清除缓存，避免穷举
-            if (CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, accessTokenRequest.getCode(), true)) {
+            if (CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, code, true)) {
                 throw new BadCredentialsException("验证码错误");
             }
         } catch (Exception e) {
@@ -56,12 +55,6 @@ public class SmsTokenGranter implements TokenGranter {
         }
     }
 
-
-    @Override
-    public boolean support(TokenRequest tokenRequest) {
-        return tokenRequest instanceof SmsTokenRequest
-                && getGrantType().equals(tokenRequest.getGrantType());
-    }
 
     @Override
     public String getGrantType() {

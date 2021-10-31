@@ -9,6 +9,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import java.util.Map;
+
 public class RefreshTokenGranter implements TokenGranter {
 
     private UserDetailsService userDetailsService;
@@ -16,8 +18,8 @@ public class RefreshTokenGranter implements TokenGranter {
 
     @Override
     public Token grant(TokenRequest tokenRequest) {
-        RefreshTokenRequest refreshTokenRequest = (RefreshTokenRequest) tokenRequest;
-        String refreshToken = refreshTokenRequest.getRefreshToken();
+        Map<String, String> requestParameters = tokenRequest.getRequestParameters();
+        String refreshToken = requestParameters.get("refreshToken");
 
         if (!tokenProcessor.verify(refreshToken)) {
             throw new BadCredentialsException("invalid token");
@@ -38,10 +40,6 @@ public class RefreshTokenGranter implements TokenGranter {
         this.tokenProcessor = tokenProcessor;
     }
 
-    @Override
-    public boolean support(TokenRequest tokenRequest) {
-        return tokenRequest instanceof RefreshTokenRequest;
-    }
 
     @Override
     public String getGrantType() {
