@@ -35,10 +35,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TokenProcessor {
 
-    protected static final String CLIENT_ID_PAYLOAD_NAME = "cid";
-    protected static final String USERNAME_PAYLOAD_NAME = "u";
-    protected static final String AUTHORITIES_PAYLOAD_NAME = "a";
-    protected static final String USER_ID_PAYLOAD_NAME = "uid";
+    public static final String CLIENT_ID_PAYLOAD_NAME = "cid";
+    public static final String USERNAME_PAYLOAD_NAME = "u";
+    public static final String AUTHORITIES_PAYLOAD_NAME = "a";
+    public static final String USER_ID_PAYLOAD_NAME = "uid";
 
     protected final JWTSigner jwtSigner;
     protected static final int DEFAULT_EXPIRES = 2 * 60 * 60;
