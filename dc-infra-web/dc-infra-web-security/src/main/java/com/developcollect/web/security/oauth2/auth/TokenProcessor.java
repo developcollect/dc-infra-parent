@@ -8,6 +8,7 @@ import cn.hutool.jwt.JWTValidator;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
 import com.developcollect.core.utils.DateUtil;
+import com.developcollect.core.utils.LambdaUtil;
 import com.developcollect.core.utils.StrUtil;
 import com.developcollect.web.common.security.DcSecurityUser;
 import com.developcollect.web.security.oauth2.Token;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -39,25 +41,28 @@ public class TokenProcessor {
     protected static final String USER_ID_PAYLOAD_NAME = "uid";
 
     protected final JWTSigner jwtSigner;
-    protected final int expires;
-    protected final int refreshExpires;
+    protected static final int DEFAULT_EXPIRES = 2 * 60 * 60;
+    protected static final int DEFAULT_REFRESH_EXPIRES = 3 * 60 * 60;
+
+    private final Consumer<JWT> accessTokenJwtConsumer;
+    private final Consumer<JWT> refreshTokenJwtConsumer;
 
 
     /**
      * @param key 加密和验签的秘钥
      */
     public TokenProcessor(String key) {
-        this(key, 2 * 60 * 60, 3 * 60 * 60);
+        this(key, LambdaUtil::nop, LambdaUtil::nop);
     }
 
-    public TokenProcessor(String key, int expires, int refreshExpires) {
-        this(JWTSignerUtil.hs256(Base64.decode(key)), expires, refreshExpires);
+    public TokenProcessor(String key, Consumer<JWT> accessTokenJwtConsumer, Consumer<JWT> refreshTokenJwtConsumer) {
+        this(JWTSignerUtil.hs256(Base64.decode(key)), accessTokenJwtConsumer, refreshTokenJwtConsumer);
     }
 
-    public TokenProcessor(JWTSigner jwtSigner, int expires, int refreshExpires) {
+    public TokenProcessor(JWTSigner jwtSigner, Consumer<JWT> accessTokenJwtConsumer, Consumer<JWT> refreshTokenJwtConsumer) {
         this.jwtSigner = jwtSigner;
-        this.expires = expires;
-        this.refreshExpires = refreshExpires;
+        this.accessTokenJwtConsumer = accessTokenJwtConsumer;
+        this.refreshTokenJwtConsumer = refreshTokenJwtConsumer;
     }
 
     public Token grantToken(TokenRequest tokenRequest, UserDetails userDetails) {
@@ -67,14 +72,18 @@ public class TokenProcessor {
                 .setPayload(CLIENT_ID_PAYLOAD_NAME, tokenRequest.getClientId())
                 .setPayload(USERNAME_PAYLOAD_NAME, userDetails.getUsername())
                 .setPayload(AUTHORITIES_PAYLOAD_NAME, userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(",")))
-                .setExpiresAt(DateUtil.offsetSecond(now, expires))
+                .setExpiresAt(DateUtil.offsetSecond(now, DEFAULT_EXPIRES))
                 .setSigner(jwtSigner);
+
+        accessTokenJwtConsumer.accept(accessTokenJwt);
 
         JWT refreshTokenJwt = JWT.create()
                 .setPayload(CLIENT_ID_PAYLOAD_NAME, tokenRequest.getClientId())
                 .setPayload(USERNAME_PAYLOAD_NAME, userDetails.getUsername())
-                .setExpiresAt(DateUtil.offsetSecond(now, refreshExpires))
+                .setExpiresAt(DateUtil.offsetSecond(now, DEFAULT_REFRESH_EXPIRES))
                 .setSigner(jwtSigner);
+
+        refreshTokenJwtConsumer.accept(refreshTokenJwt);
 
 
         if (userDetails instanceof DcSecurityUser) {
@@ -87,8 +96,8 @@ public class TokenProcessor {
         Token token = new Token();
         token.setAccessToken(accessTokenJwt.sign());
         token.setRefreshToken(refreshTokenJwt.sign());
-        token.setExpires((long) expires);
-        token.setRefreshExpires((long) refreshExpires);
+        token.setExpires(((Date) accessTokenJwt.getPayload("exp")).getTime() / 1000);
+        token.setRefreshExpires(((Date) refreshTokenJwt.getPayload("exp")).getTime() / 1000);
 
         return token;
     }

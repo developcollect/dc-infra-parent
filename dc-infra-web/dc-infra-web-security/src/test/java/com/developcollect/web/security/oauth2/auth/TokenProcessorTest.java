@@ -1,6 +1,10 @@
 package com.developcollect.web.security.oauth2.auth;
 
+import cn.hutool.jwt.JWT;
+import com.developcollect.core.utils.DateUtil;
 import org.junit.Test;
+
+import java.util.Date;
 
 public class TokenProcessorTest {
 
@@ -8,6 +12,10 @@ public class TokenProcessorTest {
 
     @Test
     public void test_token() {
+        JWT accessTokenJwt = JWT.create()
+                .setExpiresAt(DateUtil.offsetSecond(new Date(), 3 * 60 * 60));
+        Date exp = (Date) accessTokenJwt.getPayload("exp");
+        System.out.println(exp.getTime() / 1000);
     }
 
 }
