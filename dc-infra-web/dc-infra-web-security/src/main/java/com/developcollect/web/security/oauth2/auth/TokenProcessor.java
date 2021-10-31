@@ -116,7 +116,7 @@ public class TokenProcessor {
             return true;
         } catch (Exception e) {
             if (!(e instanceof ValidateException)) {
-                log.error("验证token时出现异常", e);
+                log.error("验证token时出现异常: token:[{}] msg:[{}]", token, e.getMessage());
             }
             return false;
         }

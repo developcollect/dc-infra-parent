@@ -28,4 +28,14 @@ public abstract class LogicallyDeletionEntity<ID extends Serializable> extends C
     public boolean undeleted() {
         return deleteFlag == 0;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }

@@ -27,4 +27,14 @@ public abstract class CommonEntity<ID extends Serializable> extends IdEntity<ID>
 
     @TableField(fill = FieldFill.UPDATE)
     protected LocalDateTime updateTime;
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
 }
