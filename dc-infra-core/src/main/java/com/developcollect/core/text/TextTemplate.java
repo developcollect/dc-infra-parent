@@ -1,5 +1,7 @@
-package com.developcollect.core.utils;
+package com.developcollect.core.text;
 
+
+import com.developcollect.core.utils.StrUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
