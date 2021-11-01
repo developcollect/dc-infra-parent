@@ -39,10 +39,17 @@ public @interface EnumValid {
     boolean single() default true;
 
     /**
-     * 是否可重复
+     * 是否可输入重复项
      */
     boolean repeat() default false;
 
+    /**
+     * 最小输入枚举数量，0表示不限制
+     */
     int minSize() default 0;
+
+    /**
+     * 最大输入枚举数量，0表示不限制
+     */
     int maxSize() default 0;
 }
