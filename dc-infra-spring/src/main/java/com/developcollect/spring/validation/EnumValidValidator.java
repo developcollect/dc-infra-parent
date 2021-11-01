@@ -100,7 +100,7 @@ public class EnumValidValidator implements ConstraintValidator<EnumValid, Object
 
         inputEnums.removeAll(this.enums);
         if (!inputEnums.isEmpty()) {
-            replaceMessage(context, "错误的枚举值：" + inputEnums);
+            replaceMessage(context, "存在错误的枚举值：输入值：" + value + "   错误值:" + inputEnums);
             return false;
         }
         return true;
