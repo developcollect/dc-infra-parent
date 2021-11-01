@@ -9,7 +9,6 @@ import java.io.Serializable;
 /**
  * 逻辑删除基类
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class LogicallyDeletionEntity<ID extends Serializable> extends CommonEntity<ID> {
 

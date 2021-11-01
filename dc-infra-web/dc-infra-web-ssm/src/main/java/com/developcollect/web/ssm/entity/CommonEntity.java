@@ -11,7 +11,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @ToString(callSuper = true)
 public abstract class CommonEntity<ID extends Serializable> extends IdEntity<ID> {
