@@ -22,10 +22,10 @@ public abstract class CommonEntity<ID extends Serializable> extends IdEntity<ID>
     @TableField(fill = FieldFill.INSERT, updateStrategy = FieldStrategy.NEVER)
     protected LocalDateTime createTime;
 
-    @TableField(fill = FieldFill.UPDATE)
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     protected Long updateUser;
 
-    @TableField(fill = FieldFill.UPDATE)
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     protected LocalDateTime updateTime;
 
     @Override
