@@ -1,7 +1,11 @@
 package com.developcollect.web.common.http.wrapper;
 
+import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.io.IoUtil;
+import com.developcollect.core.utils.ArrayUtil;
+import com.developcollect.core.utils.ReflectUtil;
 import com.developcollect.web.common.http.MutableRequest;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -10,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 缓存报文，使报文可以重复读取
@@ -26,7 +31,28 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
      */
     public MutableBufferedServletRequestWrapper(HttpServletRequest request) throws IOException {
         super(request);
-        this.buffer = IoUtil.readBytes(request.getInputStream(), false);
+        if (MediaType.APPLICATION_FORM_URLENCODED_VALUE.equals(request.getContentType())) {
+            // 触发Parameter解析
+            request.getParameterMap();
+            if ("org.apache.catalina.connector.RequestFacade".equals(request.getClass().getName())) {
+                bufferRequestFacadeUrlEncodedBody(request);
+            }
+        } else {
+            this.buffer = IoUtil.readBytes(request.getInputStream(), false);
+        }
+        if (this.buffer == null) {
+            throw new UtilException("无法读取body");
+        }
+    }
+
+
+    private void bufferRequestFacadeUrlEncodedBody(HttpServletRequest request) {
+        try {
+            Object tr = ReflectUtil.getFieldValue(request, "request");
+            Object postData = ReflectUtil.getFieldValue(tr, "postData");
+            this.buffer = ArrayUtil.sub((byte[]) postData, 0, request.getContentLength());
+        } catch (Exception ignore) {
+        }
     }
 
 
