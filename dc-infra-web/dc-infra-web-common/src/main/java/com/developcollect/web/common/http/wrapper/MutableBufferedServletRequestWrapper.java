@@ -14,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 /**
  * 缓存报文，使报文可以重复读取
@@ -39,6 +38,9 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
             }
         } else {
             this.buffer = IoUtil.readBytes(request.getInputStream(), false);
+            if (this.buffer == null) {
+                this.buffer = "".getBytes();
+            }
         }
         if (this.buffer == null) {
             throw new UtilException("无法读取body");

@@ -16,11 +16,15 @@ public class BufferedServletRequestFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest requestRef = (HttpServletRequest) request;
-        try {
-            requestRef = new MutableBufferedServletRequestWrapper((HttpServletRequest) request);
-        } catch (Exception e) {
-            log.warn("无法缓存请求体：{}", requestRef.getRequestURL());
+
+        if (!"GET".equals(requestRef.getMethod()) && !"HEAD".equals(requestRef.getMethod())) {
+            try {
+                requestRef = new MutableBufferedServletRequestWrapper((HttpServletRequest) request);
+            } catch (Exception e) {
+                log.warn("无法缓存请求体：{}", requestRef.getRequestURL());
+            }
         }
+
         chain.doFilter(requestRef, response);
     }
 
