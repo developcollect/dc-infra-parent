@@ -3,7 +3,7 @@ package com.developcollect.web.ssm.config;
 import cn.hutool.core.util.ClassUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
-import com.baomidou.mybatisplus.extension.plugins.pagination.PageDto;
+import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import com.developcollect.core.utils.StrUtil;
 import com.developcollect.web.ssm.utils.EntityUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class MybatisPlusPageMethodArgumentResolver implements HandlerMethodArgum
         int pageNo = resolvePageNo(nativeWebRequest);
         int pageSize = resolvePageSize(nativeWebRequest);
         List<OrderItem> orderItems = resolveSort(parameter, nativeWebRequest);
-        PageDto<Object> page = new PageDto<>(pageNo, pageSize);
+        PageDTO<Object> page = new PageDTO<>(pageNo, pageSize);
         page.setOrders(orderItems);
         return page;
     }

@@ -16,16 +16,6 @@ import java.util.Objects;
 public class ServiceImpl<M extends BaseMapper<T>, T> extends com.baomidou.mybatisplus.extension.service.impl.ServiceImpl<M, T> implements IService<T> {
 
     @Override
-    protected Class<T> currentMapperClass() {
-        return (Class<T>) this.getResolvableType().as(ServiceImpl.class).getGeneric(0).getType();
-    }
-
-    @Override
-    protected Class<T> currentModelClass() {
-        return (Class<T>) this.getResolvableType().as(ServiceImpl.class).getGeneric(1).getType();
-    }
-
-    @Override
     public <V> T getByField(SFunction<T, V> fieldGetter, V val) {
         return getOne(Wrappers.<T>query().eq(getColumnName(fieldGetter), val));
     }
