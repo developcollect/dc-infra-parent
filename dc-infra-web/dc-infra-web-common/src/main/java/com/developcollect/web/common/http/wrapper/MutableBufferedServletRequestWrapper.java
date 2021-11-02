@@ -38,9 +38,6 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
             }
         } else {
             this.buffer = IoUtil.readBytes(request.getInputStream(), false);
-            if (this.buffer == null) {
-                this.buffer = "".getBytes();
-            }
         }
         if (this.buffer == null) {
             throw new UtilException("无法读取body");
