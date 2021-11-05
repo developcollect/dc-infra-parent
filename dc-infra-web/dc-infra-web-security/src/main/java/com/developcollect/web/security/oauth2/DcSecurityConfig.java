@@ -126,7 +126,7 @@ public class DcSecurityConfig extends WebSecurityConfigurerAdapter {
     AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
             response.setStatus(401);
-            ServletUtil.writeJson(response, R.build(401, authException.getMessage()));
+            ServletUtil.writeJson(response, R.build("401", authException.getMessage()));
         };
     }
 
@@ -134,7 +134,7 @@ public class DcSecurityConfig extends WebSecurityConfigurerAdapter {
     AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
             response.setStatus(403);
-            ServletUtil.writeJson(response, R.build(403, accessDeniedException.getMessage()));
+            ServletUtil.writeJson(response, R.build("403", accessDeniedException.getMessage()));
         };
     }
 

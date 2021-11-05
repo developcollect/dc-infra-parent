@@ -7,11 +7,11 @@ import java.io.Serializable;
  * @version 1.0
  * @date 2020/10/16 16:26
  */
-public interface IException extends Serializable {
+public interface IExceptionInfo extends Serializable {
 
-    int DEFAULT_CODE = 500;
+    String DEFAULT_CODE = "500";
 
-    int getCode();
+    String getCode();
 
     String getMessage();
 

@@ -1,13 +1,12 @@
 package com.developcollect.spring.webmvc;
 
-import com.developcollect.core.exception.GlobalException;
-import com.developcollect.core.exception.GlobalRuntimeException;
-import com.developcollect.core.exception.IException;
+import com.developcollect.core.exception.DcException;
+import com.developcollect.core.exception.DcRuntimeException;
+import com.developcollect.core.exception.IExceptionInfo;
 import com.developcollect.core.web.common.R;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.EnvironmentAware;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.core.env.Environment;
 import org.springframework.validation.BindException;
@@ -16,6 +15,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.validation.ValidationException;
 import java.util.Arrays;
@@ -32,17 +32,17 @@ public class DefaultGlobalExceptionHandler implements EnvironmentAware {
 
     private Set<String> profiles;
 
-    @ExceptionHandler(GlobalException.class)
-    public R jcGlobalException(GlobalException e) {
+    @ExceptionHandler(DcException.class)
+    public R jcGlobalException(DcException e) {
         return processJcException(e);
     }
 
-    @ExceptionHandler(GlobalRuntimeException.class)
-    public R jcGlobalException(GlobalRuntimeException e) {
+    @ExceptionHandler(DcRuntimeException.class)
+    public R jcGlobalException(DcRuntimeException e) {
         return processJcException(e);
     }
 
-    private R processJcException(IException e) {
+    private R processJcException(IExceptionInfo e) {
         Throwable t = (Throwable) e;
         if (this.profiles.contains("dev") || this.profiles.contains("test")) {
             log.info("全局异常处理", t);

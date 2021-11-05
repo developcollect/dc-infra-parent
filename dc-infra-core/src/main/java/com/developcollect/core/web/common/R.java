@@ -3,30 +3,31 @@ package com.developcollect.core.web.common;
 
 /**
  * 提供返回值的封装
+ *
  * @param <T>
  */
 public class R<T> {
     /**
      * 通用成功代码
      */
-    public static final int COMMON_SUCCESS_CODE = 200;
+    public static final String COMMON_SUCCESS_CODE = "200";
 
     /**
      * 通用客户端错误代码
      */
-    public static final int COMMON_CLIENT_FAIL_CODE = 400;
+    public static final String COMMON_CLIENT_FAIL_CODE = "400";
 
     /**
      * 通用服务端错误代码
      */
-    public static final int COMMON_SERVER_FAIL_CODE = 500;
+    public static final String COMMON_SERVER_FAIL_CODE = "500";
 
     /**
      * 状态代码
      * <p>
      * 成功： 200
      */
-    private int code;
+    private String code;
 
     /**
      * 返回消息
@@ -41,7 +42,7 @@ public class R<T> {
     public R() {
     }
 
-    public R(int code, String message, T data) {
+    public R(String code, String message, T data) {
         this.code = code;
         this.message = message;
         this.data = data;
@@ -57,7 +58,7 @@ public class R<T> {
      * @author Zhu Kaixiao
      * @date 2020/9/26 11:17
      */
-    public static <E> R<E> ok(int code, String message) {
+    public static <E> R<E> ok(String code, String message) {
         return build(code, message);
     }
 
@@ -102,7 +103,7 @@ public class R<T> {
     }
 
 
-    public static <E> R<E> fail(int code, String message) {
+    public static <E> R<E> fail(String code, String message) {
         return build(code, message);
     }
 
@@ -125,11 +126,11 @@ public class R<T> {
     }
 
 
-    public static <E> R<E> build(int code, String message) {
+    public static <E> R<E> build(String code, String message) {
         return new R<>(code, message, null);
     }
 
-    public static <E> R<E> build(int code, String message, E data) {
+    public static <E> R<E> build(String code, String message, E data) {
         return new R<>(code, message, data);
     }
 
@@ -143,7 +144,7 @@ public class R<T> {
      * @date 2020/9/26 11:22
      */
     public boolean success() {
-        return getCode() >= COMMON_SUCCESS_CODE && getCode() < 300;
+        return COMMON_SUCCESS_CODE.equals(this.getCode());
     }
 
 
@@ -151,7 +152,7 @@ public class R<T> {
         return !success();
     }
 
-    public int getCode() {
+    public String getCode() {
         return this.code;
     }
 
@@ -163,7 +164,7 @@ public class R<T> {
         return this.data;
     }
 
-    public R<T> setCode(int code) {
+    public R<T> setCode(String code) {
         this.code = code;
         return this;
     }
