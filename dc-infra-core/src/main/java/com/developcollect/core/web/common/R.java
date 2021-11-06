@@ -50,19 +50,6 @@ public class R<T> {
 
 
     /**
-     * 以状态码和消息构建一个成功的返回结果包装
-     *
-     * @param code    状态码
-     * @param message 消息
-     * @return JcResult<E>
-     * @author Zhu Kaixiao
-     * @date 2020/9/26 11:17
-     */
-    public static <E> R<E> ok(String code, String message) {
-        return build(code, message);
-    }
-
-    /**
      * 以消息和数据构建一个成功的返回结果包装
      * 状态码固定为200
      *
@@ -75,6 +62,11 @@ public class R<T> {
     public static <E> R<E> ok(String message, E data) {
         return build(COMMON_SUCCESS_CODE, message, data);
     }
+
+    public static <E> R<E> okMsg(String message) {
+        return build(COMMON_SUCCESS_CODE, message, null);
+    }
+
 
     /**
      * 以数据构建一个成功的返回结果包装
@@ -103,10 +95,6 @@ public class R<T> {
     }
 
 
-    public static <E> R<E> fail(String code, String message) {
-        return build(code, message);
-    }
-
     /***
      * 系统异常消息，不要主动抛出，需要国际化
      * @param message 系统错误消息
@@ -125,6 +113,15 @@ public class R<T> {
         return fail(null);
     }
 
+
+
+    public static <E> R<E> build(int code, String message) {
+        return build(String.valueOf(code), message);
+    }
+
+    public static <E> R<E> build(int code, String message, E data) {
+        return build(String.valueOf(code), message, data);
+    }
 
     public static <E> R<E> build(String code, String message) {
         return new R<>(code, message, null);
