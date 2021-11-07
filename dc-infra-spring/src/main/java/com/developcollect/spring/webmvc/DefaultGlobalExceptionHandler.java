@@ -51,7 +51,7 @@ public class DefaultGlobalExceptionHandler implements EnvironmentAware {
         }
         // 根据异常代码获取异常的本地化（国际化）提示消息。
 //        String msg = MessageResolver.getMessage(String.valueOf(e.getCode()), e.getMessage());
-        return R.fail(e.getCode(), t.getMessage());
+        return R.build(e.getCode(), t.getMessage());
     }
 
 
@@ -61,7 +61,7 @@ public class DefaultGlobalExceptionHandler implements EnvironmentAware {
         String message = bindExceptionMessage(bindingResult, e.getMessage());
 
         log.info("全局异常处理: {}", message);
-        return R.fail(R.COMMON_CLIENT_FAIL_CODE, message);
+        return R.build(R.COMMON_CLIENT_FAIL_CODE, message);
     }
 
     @ExceptionHandler(BindException.class)
@@ -69,7 +69,7 @@ public class DefaultGlobalExceptionHandler implements EnvironmentAware {
         BindingResult bindingResult = e.getBindingResult();
         String message = bindExceptionMessage(bindingResult, e.getMessage());
         log.info("全局异常处理: {}", message);
-        return R.fail(R.COMMON_CLIENT_FAIL_CODE, message);
+        return R.build(R.COMMON_CLIENT_FAIL_CODE, message);
     }
 
 
@@ -107,14 +107,14 @@ public class DefaultGlobalExceptionHandler implements EnvironmentAware {
     @ExceptionHandler(ValidationException.class)
     public R validationExceptionHandler(ValidationException e) {
         String message = e.getMessage();
-        return R.fail(R.COMMON_CLIENT_FAIL_CODE, message);
+        return R.build(R.COMMON_CLIENT_FAIL_CODE, message);
     }
 
 
     @ExceptionHandler(ServletRequestBindingException.class)
     public R ServletRequestBindingExceptionHandler(ValidationException e) {
         String message = e.getMessage();
-        return R.fail(R.COMMON_CLIENT_FAIL_CODE, message);
+        return R.build(R.COMMON_CLIENT_FAIL_CODE, message);
     }
 
 
