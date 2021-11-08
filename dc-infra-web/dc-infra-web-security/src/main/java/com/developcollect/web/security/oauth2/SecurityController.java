@@ -43,7 +43,7 @@ public class SecurityController {
     public Token refresh(@RequestParam Map<String, String> parameters) {
         TokenRequest tokenRequest = TokenRequest.of(parameters);
         if (!"refreshToken".equals(tokenRequest.getGrantType())) {
-            throw new IllegalArgumentException("grantType错误");
+            throw new BadCredentialsException("grantType错误");
         }
         return tokenGranter.grant(tokenRequest);
     }
