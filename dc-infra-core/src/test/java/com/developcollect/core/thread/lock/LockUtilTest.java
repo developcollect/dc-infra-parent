@@ -7,8 +7,10 @@ import com.developcollect.core.utils.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.util.concurrent.*;
-
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -23,6 +25,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
+            CacheLock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             System.out.println(StrUtil.format("{}: 尝试上锁", name));
             try {
@@ -31,13 +34,14 @@ public class LockUtilTest {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            LockUtil.lock(key);
+
+            lock.lock();
             System.out.println();
             System.out.println(StrUtil.format("{}: 上锁成功", name));
 
             ThreadUtil.sleep(2000);
 
-            LockUtil.unlock(key);
+            lock.unlock();
             System.out.println(StrUtil.format("{}: 释放锁", name));
             countDownLatch.countDown();
         };
@@ -65,6 +69,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
+            CacheLock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             int timeout = RandomUtil.randomInt(1, 8);
             try {
@@ -75,14 +80,19 @@ public class LockUtilTest {
             }
 
             System.out.println(StrUtil.format("{} ==> {}: 尝试上锁, 超时: {}s", System.currentTimeMillis(), name, timeout));
-            boolean locked = LockUtil.tryLock(key, timeout, TimeUnit.SECONDS);
+            boolean locked = false;
+            try {
+                locked = lock.tryLock(timeout, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                System.out.println("获取锁时线程中断");
+            }
             System.out.println(StrUtil.format("{} ==> {}: 获取锁 {}", System.currentTimeMillis(), name, locked));
 
             ThreadUtil.sleep(RandomUtil.randomLong(2000, 4000));
 
             if (locked) {
-                LockUtil.unlock(key);
-                System.out.println(StrUtil.format("{} ==> {}: 释放锁",System.currentTimeMillis(), name));
+                lock.unlock();
+                System.out.println(StrUtil.format("{} ==> {}: 释放锁", System.currentTimeMillis(), name));
             }
 
             System.out.println();
@@ -95,7 +105,6 @@ public class LockUtilTest {
             t.setName("T" + i);
             t.start();
         }
-
 
 
         try {
@@ -115,6 +124,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
+            CacheLock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             boolean locked;
             try {
@@ -124,14 +134,14 @@ public class LockUtilTest {
                 e.printStackTrace();
             }
             do {
-                locked = LockUtil.tryLock(key);
+                locked = lock.tryLock();
                 System.out.println(StrUtil.format("{}: 尝试上锁：{}", name, locked));
                 ThreadUtil.sleep(500);
             } while (!locked);
 
             ThreadUtil.sleep(2000);
 
-            LockUtil.unlock(key);
+            lock.unlock();
             System.out.println(StrUtil.format("{}: 释放锁", name));
             System.out.println();
             countDownLatch.countDown();
@@ -143,7 +153,6 @@ public class LockUtilTest {
             t.setName("T" + i);
             t.start();
         }
-
 
 
         try {
@@ -164,6 +173,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
+            CacheLock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             System.out.println(StrUtil.format("{}: 尝试上锁", name));
             try {
@@ -172,17 +182,17 @@ public class LockUtilTest {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            LockUtil.lock(key);
+            lock.lock();
             System.out.println();
             System.out.println(StrUtil.format("{}: 上锁成功", name));
-            LockUtil.lock(key);
+            lock.lock();
             System.out.println(StrUtil.format("{}: 重入上锁成功", name));
 
             ThreadUtil.sleep(2000);
 
-            LockUtil.unlock(key);
+            lock.unlock();
             System.out.println(StrUtil.format("{}: 释放锁1", name));
-            LockUtil.unlock(key);
+            lock.unlock();
             System.out.println(StrUtil.format("{}: 释放锁2", name));
             countDownLatch.countDown();
         };
@@ -242,11 +252,11 @@ public class LockUtilTest {
 
         try {
             countDownLatch.await();
-                synchronized (key) {
-                    key.notify();
-                    System.out.println(SystemClock.now() + "唤醒全部");
-                    ThreadUtil.sleep(1000);
-                }
+            synchronized (key) {
+                key.notify();
+                System.out.println(SystemClock.now() + "唤醒全部");
+                ThreadUtil.sleep(1000);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -278,8 +288,9 @@ public class LockUtilTest {
 
     private void changePos(long id, Runnable runnable) {
         String lockKey = "STRATEGY_TRADE_LOCK_KEY_PREFIX" + id;
+        CacheLock lock = LockUtil.createCacheLock(lockKey);
         log.debug("[TL] 尝试锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
-        LockUtil.lock(lockKey);
+        lock.lock();
         log.debug("[TL] 获取锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
         try {
             try {
@@ -290,7 +301,7 @@ public class LockUtilTest {
             }
         } finally {
             log.debug("[TL] 尝试释放[{}]  TH:[{}]", id, Thread.currentThread().getName());
-            LockUtil.unlock(lockKey);
+            lock.unlock();
             log.debug("[TL] 释放锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
         }
     }
