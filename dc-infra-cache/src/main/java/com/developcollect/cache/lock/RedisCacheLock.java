@@ -3,6 +3,10 @@ package com.developcollect.cache.lock;
 import com.developcollect.core.lang.init.Initable;
 import com.developcollect.core.thread.lock.CacheLock;
 import com.developcollect.core.utils.ServerUtil;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
+import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -10,8 +14,9 @@ import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
-import java.util.Collections;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.LockSupport;
@@ -20,6 +25,8 @@ import java.util.concurrent.locks.LockSupport;
 public class RedisCacheLock implements CacheLock, Initable {
     private static StringRedisTemplate stringRedisTemplate;
     private static final String SERVER_IDENTITY = Long.toHexString(ServerUtil.getServerIdentity());
+    private static final ConcurrentMap<String, ExpirationEntry> EXPIRATION_RENEWAL_MAP = new ConcurrentHashMap<>();
+    private static HashedWheelTimer timer;
 
 
     /**
@@ -42,18 +49,18 @@ public class RedisCacheLock implements CacheLock, Initable {
     private static final DefaultRedisScript<Long> UNLOCK_REDIS_SCRIPT = new DefaultRedisScript<>(
             // 如果锁不存在，直接返回
             "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
-                      "return nil;" +
+                    "return nil;" +
                     "end; " +
                     // 给锁的重入次数减1，如果减了之后的数 > 0，说明依然持锁，更新过期时间
                     // 如果减了之后的数不大于0，则删除key(解锁)，并发布解锁消息
                     "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
                     "if (counter > 0) then " +
-                      "redis.call('pexpire', KEYS[1], ARGV[2]); " +
-                      "return 0; " +
+                    "redis.call('pexpire', KEYS[1], ARGV[2]); " +
+                    "return 0; " +
                     "else " +
-                      "redis.call('del', KEYS[1]); " +
-                      "redis.call('publish', KEYS[2], ARGV[1]); " +
-                      "return 1; " +
+                    "redis.call('del', KEYS[1]); " +
+                    "redis.call('publish', KEYS[2], ARGV[1]); " +
+                    "return 1; " +
                     "end; " +
                     "return nil;",
             Long.class
@@ -91,6 +98,8 @@ public class RedisCacheLock implements CacheLock, Initable {
     @Override
     public void init(Object... args) {
         RedisCacheLock.stringRedisTemplate = (StringRedisTemplate) args[0];
+        initTimer();
+
         stringRedisTemplate.execute((RedisCallback<String>) connection -> {
             connection.pSubscribe(new MessageListener() {
                 @Override
@@ -174,17 +183,22 @@ public class RedisCacheLock implements CacheLock, Initable {
     }
 
 
-    private static boolean tryLock(String key) {
+    private boolean tryLock(String key) {
         return tryLock(key, 30, TimeUnit.SECONDS);
     }
 
-    private static boolean tryLock(String key, long expireTime, TimeUnit timeUnit) {
+    private boolean tryLock(String key, long expireTime, TimeUnit timeUnit) {
         long seconds = timeUnit.toSeconds(expireTime);
         Long ttl = stringRedisTemplate.execute(
                 TRY_LOCK_REDIS_SCRIPT, Collections.singletonList(key),
                 getLockName(Thread.currentThread().getId()), Long.toString(seconds)
         );
-        return ttl == null;
+        boolean locked = ttl == null;
+        if (locked) {
+            // 安排自动续时
+            scheduleExpirationRenewal(Thread.currentThread().getId());
+        }
+        return locked;
     }
 
     /**
@@ -198,7 +212,12 @@ public class RedisCacheLock implements CacheLock, Initable {
     public boolean unlock(String key) {
         Long result = stringRedisTemplate.execute(UNLOCK_REDIS_SCRIPT, Collections.singletonList(key),
                 getLockName(Thread.currentThread().getId()));
-        return Objects.equals(result, 1L);
+
+        boolean unlocked = Objects.equals(result, 1L);
+        if (unlocked) {
+            cancelExpirationRenewal(Thread.currentThread().getId());
+        }
+        return unlocked;
     }
 
     private static String getLockName(long threadId) {
@@ -206,4 +225,141 @@ public class RedisCacheLock implements CacheLock, Initable {
     }
 
 
+    private void scheduleExpirationRenewal(long threadId) {
+        ExpirationEntry entry = new ExpirationEntry();
+        ExpirationEntry oldEntry = EXPIRATION_RENEWAL_MAP.putIfAbsent(getEntryName(), entry);
+        if (oldEntry != null) {
+            oldEntry.addThreadId(threadId);
+        } else {
+            entry.addThreadId(threadId);
+            renewExpiration();
+        }
+    }
+
+    private void cancelExpirationRenewal(Long threadId) {
+        ExpirationEntry task = EXPIRATION_RENEWAL_MAP.get(getEntryName());
+        if (task == null) {
+            return;
+        }
+
+        if (threadId != null) {
+            task.removeThreadId(threadId);
+        }
+
+        if (threadId == null || task.hasNoThreads()) {
+            Timeout timeout = task.getTimeout();
+            if (timeout != null) {
+                timeout.cancel();
+            }
+            EXPIRATION_RENEWAL_MAP.remove(getEntryName());
+        }
+    }
+
+    private void renewExpiration() {
+        ExpirationEntry ee = EXPIRATION_RENEWAL_MAP.get(getEntryName());
+        if (ee == null) {
+            return;
+        }
+
+        Timeout timeout = newTimeout(t -> {
+            ExpirationEntry ent = EXPIRATION_RENEWAL_MAP.get(getEntryName());
+            if (ent == null) {
+                return;
+            }
+            Long threadId = ent.getFirstThreadId();
+            if (threadId == null) {
+                return;
+            }
+
+            try {
+                if (renewExpiration(threadId)) {
+                    // reschedule itself
+                    renewExpiration();
+                }
+            } catch (Exception e) {
+                log.error("Can't update lock " + getKey() + " expiration", e);
+                return;
+            }
+        }, TimeUnit.SECONDS.toMillis(10), TimeUnit.MILLISECONDS);
+
+        ee.setTimeout(timeout);
+    }
+
+    private Boolean renewExpiration(long threadId) {
+        // todo 执行延时脚本
+        return true;
+    }
+
+
+    private String getEntryName() {
+        return SERVER_IDENTITY + ":" + getKey();
+    }
+
+    public static class ExpirationEntry {
+
+        private final Map<Long, Integer> threadIds = new LinkedHashMap<>();
+        private volatile Timeout timeout;
+
+        public ExpirationEntry() {
+            super();
+        }
+
+        public void addThreadId(long threadId) {
+            Integer counter = threadIds.get(threadId);
+            if (counter == null) {
+                counter = 1;
+            } else {
+                counter++;
+            }
+            threadIds.put(threadId, counter);
+        }
+
+        public boolean hasNoThreads() {
+            return threadIds.isEmpty();
+        }
+
+        public Long getFirstThreadId() {
+            if (threadIds.isEmpty()) {
+                return null;
+            }
+            return threadIds.keySet().iterator().next();
+        }
+
+        public void removeThreadId(long threadId) {
+            Integer counter = threadIds.get(threadId);
+            if (counter == null) {
+                return;
+            }
+            counter--;
+            if (counter == 0) {
+                threadIds.remove(threadId);
+            } else {
+                threadIds.put(threadId, counter);
+            }
+        }
+
+
+        public void setTimeout(Timeout timeout) {
+            this.timeout = timeout;
+        }
+
+        public Timeout getTimeout() {
+            return timeout;
+        }
+
+    }
+
+
+    public static Timeout newTimeout(TimerTask task, long delay, TimeUnit unit) {
+        try {
+            return timer.newTimeout(task, delay, unit);
+        } catch (IllegalStateException e) {
+            throw e;
+        }
+    }
+
+    private static void initTimer() {
+        timer = new HashedWheelTimer(new DefaultThreadFactory("redisson-timer", true),
+                100, TimeUnit.MILLISECONDS, 1024, false);
+    }
 }
