@@ -10,16 +10,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 
+@SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 @Slf4j
 public class MapCacheLock implements CacheLock {
 
-    private static final Map<Object, Thread> threadMap = new ConcurrentHashMap<>();
-    private static final Map<Object, Integer> lockCountMap = new ConcurrentHashMap<>();
+    private static final Map<Object, Thread> THREAD_MAP = new ConcurrentHashMap<>();
+    private static final Map<Object, Integer> LOCK_COUNT_MAP = new ConcurrentHashMap<>();
 
 
     private final String key;
 
     public MapCacheLock(String key) {
+        /*
+         * 当字符串在运行时通过+连接时，对象可能在堆区
+         * 导致锁定的不是同一个对象，就会导致死锁。因此统一调用intern()获取常量池中的字符串
+         */
         this.key = key.intern();
     }
 
@@ -123,22 +128,22 @@ public class MapCacheLock implements CacheLock {
      */
     private static void unlock(Object obj) {
         synchronized (obj) {
-            Thread thread = threadMap.get(obj);
+            Thread thread = THREAD_MAP.get(obj);
             if (thread == null) {
                 throw new IllegalArgumentException("释放锁前需要先上锁：" + obj);
             }
             Thread currentThread = Thread.currentThread();
             if (thread == currentThread) {
-                Integer count = lockCountMap.get(obj) - 1;
+                int count = LOCK_COUNT_MAP.get(obj) - 1;
                 if (count == 0) {
                     // 重入次数归零了，说明锁释放了
-                    threadMap.remove(obj);
-                    lockCountMap.remove(obj);
+                    THREAD_MAP.remove(obj);
+                    LOCK_COUNT_MAP.remove(obj);
                     // 通知随机(HotSpot虚拟机的实现其实是取第一个)一个等待锁的线程争抢锁
                     obj.notify();
                 } else {
                     // 这里只是把重入次数-1，其实锁还是占用着的
-                    lockCountMap.put(obj, count);
+                    LOCK_COUNT_MAP.put(obj, count);
                 }
             } else {
                 throw new IllegalMonitorStateException("当前线程并不持有锁，无法执行释放锁操作");
@@ -147,27 +152,18 @@ public class MapCacheLock implements CacheLock {
     }
 
 
-    // region 对参数为String的锁操作进行优化
-    /*
-     * 当字符串在运行时通过+连接时，对象可能在堆区(具体什么时候在堆区，什么是否在常量池还不清楚)
-     * 导致锁定的不是同一个对象，就会导致死锁。因此统一调用intern()获取常量池中的字符串
-     */
-
     private static boolean tryLock(String lockKey, long timeout, TimeUnit unit) throws InterruptedException {
         return tryLock((Object) lockKey.intern(), timeout, unit);
     }
 
-
-    // endregion
-
     private static boolean tryLock0(Object obj) {
         boolean locked;
         Thread currentThread = Thread.currentThread();
-        Thread thread = threadMap.computeIfAbsent(obj, k -> currentThread);
+        Thread thread = THREAD_MAP.computeIfAbsent(obj, k -> currentThread);
         locked = thread == currentThread;
         if (locked) {
-            Integer count = Optional.ofNullable(lockCountMap.get(obj)).orElse(0);
-            lockCountMap.put(obj, count + 1);
+            Integer count = Optional.ofNullable(LOCK_COUNT_MAP.get(obj)).orElse(0);
+            LOCK_COUNT_MAP.put(obj, count + 1);
         }
         return locked;
     }
