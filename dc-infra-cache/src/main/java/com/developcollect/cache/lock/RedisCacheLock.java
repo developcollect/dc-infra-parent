@@ -17,9 +17,30 @@ public class RedisCacheLock implements CacheLock, Initable {
     private static final String SERVER_IDENTITY = Long.toHexString(ServerUtil.getServerIdentity());
 
 
+    // 延期
+    //                "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+    //                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+    //                    "return 1; " +
+    //                "end; " +
+    //                "return 0;",
+
     /**
      * 通过lua脚本保证释放锁的操作具有原子性
      */
+//                    "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
+//                    "return nil;" +
+//                "end; " +
+//                "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
+//                "if (counter > 0) then " +
+//                    "redis.call('pexpire', KEYS[1], ARGV[2]); " +
+//                    "return 0; " +
+//                "else " +
+//                    "redis.call('del', KEYS[1]); " +
+//                    "redis.call('publish', KEYS[2], ARGV[1]); " +
+//                    "return 1; "+
+//                "end; " +
+//                "return nil;",
+
     private static final DefaultRedisScript<Long> releaseLockRedisScript = new DefaultRedisScript<>(
             "if redis.call('get', KEYS[1]) == ARGV[1] " +
                     "then " +
@@ -29,6 +50,17 @@ public class RedisCacheLock implements CacheLock, Initable {
                     "end",
             Long.class
     );
+// "if (redis.call('exists', KEYS[1]) == 0) then " +
+//                      "redis.call('hset', KEYS[1], ARGV[2], 1); " +
+//                      "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+//                      "return nil; " +
+//                  "end; " +
+//                  "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+//                      "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+//                      "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+//                      "return nil; " +
+//                  "end; " +
+//                  "return redis.call('pttl', KEYS[1]);"
 
     private static final DefaultRedisScript<Boolean> lockRedisScript = new DefaultRedisScript<>(
             "local v = redis.call('get', KEYS[1]) " +
@@ -125,12 +157,15 @@ public class RedisCacheLock implements CacheLock, Initable {
 
 
     private static boolean tryLock(String key) {
-        return tryLock(key, -1, TimeUnit.SECONDS);
+        return tryLock(key, 30, TimeUnit.SECONDS);
     }
 
     private static boolean tryLock(String key, long expireTime, TimeUnit timeUnit) {
         long seconds = timeUnit.toSeconds(expireTime);
-        Boolean execute = stringRedisTemplate.execute(lockRedisScript, Collections.singletonList(key), getLockValue(), Long.toString(seconds));
+        Boolean execute = stringRedisTemplate.execute(
+                lockRedisScript, Collections.singletonList(key),
+                getLockName(Thread.currentThread().getId()), Long.toString(seconds)
+        );
         return execute;
     }
 
@@ -143,12 +178,13 @@ public class RedisCacheLock implements CacheLock, Initable {
      * @date 2019/11/14 9:26
      */
     public boolean unlock(String key) {
-        Long result = stringRedisTemplate.execute(releaseLockRedisScript, Collections.singletonList(key), getLockValue());
+        Long result = stringRedisTemplate.execute(releaseLockRedisScript, Collections.singletonList(key),
+                getLockName(Thread.currentThread().getId()));
         return Objects.equals(result, 1L);
     }
 
-    private static String getLockValue() {
-        return SERVER_IDENTITY + ":" + Thread.currentThread().getId();
+    private static String getLockName(long threadId) {
+        return SERVER_IDENTITY + ":" + threadId;
     }
 
 
