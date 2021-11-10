@@ -2,14 +2,14 @@ package com.developcollect.cache.lock;
 
 import com.developcollect.core.lang.init.Initable;
 import com.developcollect.core.thread.lock.CacheLock;
-import com.developcollect.core.utils.ServerUtil;
+import com.developcollect.core.utils.IdUtil;
+import com.developcollect.core.utils.StrUtil;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.connection.Message;
-import org.springframework.data.redis.connection.MessageListener;
+import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -17,29 +17,31 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.LockSupport;
 
 @Slf4j
 public class RedisCacheLock implements CacheLock, Initable {
+    private static final String UNLOCK_MESSAGE = "0";
     private static StringRedisTemplate stringRedisTemplate;
-    private static final String SERVER_IDENTITY = Long.toHexString(ServerUtil.getServerIdentity());
+    private static final String SERVER_IDENTITY = IdUtil.fastSimpleUUID();
     private static final ConcurrentMap<String, ExpirationEntry> EXPIRATION_RENEWAL_MAP = new ConcurrentHashMap<>();
     private static HashedWheelTimer timer;
+    private final long internalLockLeaseTime = TimeUnit.SECONDS.toMillis(30);
 
 
     /**
      * 延期脚本
      */
-    private static final DefaultRedisScript<Integer> RENEW_EXPIRATION_REDIS_SCRIPT = new DefaultRedisScript<>(
+    private static final DefaultRedisScript<Long> RENEW_EXPIRATION_REDIS_SCRIPT = new DefaultRedisScript<>(
             // 如果锁存在，就延期
             "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
                     "redis.call('pexpire', KEYS[1], ARGV[1]); " +
                     "return 1; " +
                     "end; " +
                     "return 0;",
-            Integer.class
+            Long.class
     );
 
     /**
@@ -91,24 +93,20 @@ public class RedisCacheLock implements CacheLock, Initable {
     private final String key;
 
     public RedisCacheLock(String key) {
+        if (StrUtil.isBlank(key)) {
+            throw new IllegalArgumentException("key不能为空");
+        }
         this.key = key;
+    }
+
+    private RedisCacheLock() {
+        this.key = "";
     }
 
     @Override
     public void init(Object... args) {
         RedisCacheLock.stringRedisTemplate = (StringRedisTemplate) args[0];
         initTimer();
-
-        stringRedisTemplate.execute((RedisCallback<String>) connection -> {
-            connection.pSubscribe(new MessageListener() {
-                @Override
-                public void onMessage(Message message, byte[] pattern) {
-                    // todo
-                    log.info("监听到锁释放事件，则立即唤醒等待线程");
-                }
-            });
-            return null;
-        });
     }
 
     @Override
@@ -118,62 +116,145 @@ public class RedisCacheLock implements CacheLock, Initable {
 
     @Override
     public void lock() {
-        while (true) {
-            if (tryLock()) {
-                return;
-            }
-            // todo 线程休眠改为监听锁释放事件
-            LockSupport.parkNanos(this, 1000);
+        try {
+            this.lock(false);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException();
         }
+    }
+
+
+    private void lock(boolean interruptibly) throws InterruptedException {
+        long threadId = Thread.currentThread().getId();
+        Long ttl = tryAcquire(threadId);
+        // lock acquired
+        if (ttl == null) {
+            return;
+        }
+
+        // 执行订阅
+        Semaphore semaphore = subscribe();
+
+        try {
+            while (true) {
+                ttl = tryAcquire(threadId);
+                // lock acquired
+                if (ttl == null) {
+                    break;
+                }
+
+                if (ttl >= 0) {
+                    try {
+                        semaphore.tryAcquire(ttl, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        if (interruptibly) {
+                            throw e;
+                        }
+                        semaphore.tryAcquire(ttl, TimeUnit.MILLISECONDS);
+                    }
+                } else {
+                    if (interruptibly) {
+                        semaphore.acquire();
+                    } else {
+                        semaphore.acquireUninterruptibly();
+                    }
+                }
+            }
+        } finally {
+            // 退订
+            unsubscribe();
+        }
+    }
+
+    /**
+     * 尝试上锁方法
+     * 这个方法会执行上锁脚本尝试上锁，如果上锁成功那么会启动锁延时定时任务
+     *
+     * @param threadId 线程id
+     * @return 上锁成功返回null，上锁失败则返回已有锁的ttl
+     */
+    private Long tryAcquire(long threadId) {
+        Long ttl = stringRedisTemplate.execute(
+                TRY_LOCK_REDIS_SCRIPT, Collections.singletonList(getKey()),
+                Long.toString(internalLockLeaseTime), getLockValue(threadId)
+        );
+
+        // lock acquired
+        if (ttl == null) {
+            scheduleExpirationRenewal(threadId);
+        }
+        return ttl;
     }
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
-        while (true) {
-            if (tryLock()) {
-                return;
-            }
-            LockSupport.parkNanos(this, 1000);
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-        }
+        this.lock(true);
     }
 
     @Override
     public boolean tryLock() {
-        return tryLock(getKey());
+        Long ttl = tryAcquire(Thread.currentThread().getId());
+        return ttl == null;
     }
 
     @Override
-    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        long nanosTimeout = unit.toNanos(time);
-        if (nanosTimeout <= 0L) {
+    public boolean tryLock(long waitTime, TimeUnit unit) throws InterruptedException {
+        long time = unit.toMillis(waitTime);
+        long current = System.currentTimeMillis();
+        long threadId = Thread.currentThread().getId();
+        Long ttl = tryAcquire(threadId);
+        // lock acquired
+        if (ttl == null) {
+            return true;
+        }
+
+        time -= System.currentTimeMillis() - current;
+        if (time <= 0) {
             return false;
         }
-        long deadline = System.nanoTime() + nanosTimeout;
-        while (true) {
-            if (tryLock()) {
-                return true;
-            }
 
-            nanosTimeout = deadline - System.nanoTime();
-            if (nanosTimeout <= 0L) {
+        Semaphore semaphore = subscribe();
+
+        try {
+            time -= System.currentTimeMillis() - current;
+            if (time <= 0) {
                 return false;
             }
-            // 剩余超时时长超过1秒才进行线程休眠
-            if (nanosTimeout > 1000L) {
-                LockSupport.parkNanos(this, 1000);
+
+            while (true) {
+                long currentTime = System.currentTimeMillis();
+                ttl = tryAcquire(threadId);
+                // lock acquired
+                if (ttl == null) {
+                    return true;
+                }
+
+                time -= System.currentTimeMillis() - currentTime;
+                if (time <= 0) {
+                    return false;
+                }
+
+                // waiting for message
+                currentTime = System.currentTimeMillis();
+                if (ttl >= 0 && ttl < time) {
+                    semaphore.tryAcquire(ttl, TimeUnit.MILLISECONDS);
+                } else {
+                    semaphore.tryAcquire(time, TimeUnit.MILLISECONDS);
+                }
+
+                time -= System.currentTimeMillis() - currentTime;
+                if (time <= 0) {
+                    return false;
+                }
             }
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
+        } finally {
+            unsubscribe();
         }
     }
 
     @Override
     public void unlock() {
-        unlock(getKey());
+        unlock(getKey(), Thread.currentThread().getId());
     }
 
     @Override
@@ -181,24 +262,6 @@ public class RedisCacheLock implements CacheLock, Initable {
         throw new UnsupportedOperationException("RedisCacheLock`s newCondition method is unsupported");
     }
 
-
-    private boolean tryLock(String key) {
-        return tryLock(key, 30, TimeUnit.SECONDS);
-    }
-
-    private boolean tryLock(String key, long expireTime, TimeUnit timeUnit) {
-        long seconds = timeUnit.toSeconds(expireTime);
-        Long ttl = stringRedisTemplate.execute(
-                TRY_LOCK_REDIS_SCRIPT, Collections.singletonList(key),
-                getLockName(Thread.currentThread().getId()), Long.toString(seconds)
-        );
-        boolean locked = ttl == null;
-        if (locked) {
-            // 安排自动续时
-            scheduleExpirationRenewal(Thread.currentThread().getId());
-        }
-        return locked;
-    }
 
     /**
      * 释放锁
@@ -208,22 +271,32 @@ public class RedisCacheLock implements CacheLock, Initable {
      * @author Zhu Kaixiao
      * @date 2019/11/14 9:26
      */
-    public boolean unlock(String key) {
-        Long result = stringRedisTemplate.execute(UNLOCK_REDIS_SCRIPT, Collections.singletonList(key),
-                getLockName(Thread.currentThread().getId()));
+    private boolean unlock(String key, long threadId) {
+        Long result = stringRedisTemplate.execute(
+                UNLOCK_REDIS_SCRIPT,
+                Arrays.asList(key, getChannelName()),
+                UNLOCK_MESSAGE, Long.toString(internalLockLeaseTime), getLockValue(Thread.currentThread().getId()));
 
         boolean unlocked = Objects.equals(result, 1L);
+
+        // 解锁成功了，取消掉自动延时定时任务
         if (unlocked) {
             cancelExpirationRenewal(Thread.currentThread().getId());
+        }
+
+        // 返回null，说明如果锁不存在或锁不属于当前线程
+        if (result == null) {
+            throw new IllegalMonitorStateException("attempt to unlock lock, not locked by current thread by thread-id: " + threadId);
         }
         return unlocked;
     }
 
-    private static String getLockName(long threadId) {
-        return SERVER_IDENTITY + ":" + threadId;
-    }
 
-
+    /**
+     * 为指定线程id创建自动延时定时任务
+     *
+     * @param threadId 线程id
+     */
     private void scheduleExpirationRenewal(long threadId) {
         ExpirationEntry entry = new ExpirationEntry();
         ExpirationEntry oldEntry = EXPIRATION_RENEWAL_MAP.putIfAbsent(getEntryName(), entry);
@@ -235,6 +308,11 @@ public class RedisCacheLock implements CacheLock, Initable {
         }
     }
 
+    /**
+     * 取消指定线程id的自动延时定时任务
+     *
+     * @param threadId 线程id
+     */
     private void cancelExpirationRenewal(Long threadId) {
         ExpirationEntry task = EXPIRATION_RENEWAL_MAP.get(getEntryName());
         if (task == null) {
@@ -254,6 +332,9 @@ public class RedisCacheLock implements CacheLock, Initable {
         }
     }
 
+    /**
+     * 启动自动延时定时任务
+     */
     private void renewExpiration() {
         ExpirationEntry ee = EXPIRATION_RENEWAL_MAP.get(getEntryName());
         if (ee == null) {
@@ -279,16 +360,23 @@ public class RedisCacheLock implements CacheLock, Initable {
                 log.error("Can't update lock " + getKey() + " expiration", e);
                 return;
             }
-        }, TimeUnit.SECONDS.toMillis(10), TimeUnit.MILLISECONDS);
+        }, internalLockLeaseTime / 3, TimeUnit.MILLISECONDS);
 
         ee.setTimeout(timeout);
     }
 
+    /**
+     * 执行自动延时脚本
+     *
+     * @param threadId 线程id
+     * @return 是否延时成功
+     */
     private Boolean renewExpiration(long threadId) {
         // 执行延时脚本
-        Integer result = stringRedisTemplate.execute(RENEW_EXPIRATION_REDIS_SCRIPT, Collections.singletonList(key),
-                getLockName(Thread.currentThread().getId()));
-        return result != null && result == 1;
+        Long result = stringRedisTemplate.execute(RENEW_EXPIRATION_REDIS_SCRIPT,
+                Collections.singletonList(getKey()),
+                Long.toString(internalLockLeaseTime), getLockValue(threadId));
+        return Objects.equals(1L, result);
     }
 
 
@@ -296,7 +384,12 @@ public class RedisCacheLock implements CacheLock, Initable {
         return SERVER_IDENTITY + ":" + getKey();
     }
 
-    public static class ExpirationEntry {
+    private static String getLockValue(long threadId) {
+        return SERVER_IDENTITY + ":" + threadId;
+    }
+
+
+    private static class ExpirationEntry {
 
         private final Map<Long, Integer> threadIds = new LinkedHashMap<>();
         private volatile Timeout timeout;
@@ -351,7 +444,15 @@ public class RedisCacheLock implements CacheLock, Initable {
     }
 
 
-    public static Timeout newTimeout(TimerTask task, long delay, TimeUnit unit) {
+    /**
+     * 启动一个任务
+     *
+     * @param task  任务
+     * @param delay 延时时长
+     * @param unit  延时单位
+     * @return Timeout
+     */
+    private static Timeout newTimeout(TimerTask task, long delay, TimeUnit unit) {
         try {
             return timer.newTimeout(task, delay, unit);
         } catch (IllegalStateException e) {
@@ -359,8 +460,53 @@ public class RedisCacheLock implements CacheLock, Initable {
         }
     }
 
+    /**
+     * 初始化定时器
+     */
     private static void initTimer() {
         timer = new HashedWheelTimer(new DefaultThreadFactory("redisson-timer", true),
                 100, TimeUnit.MILLISECONDS, 1024, false);
+    }
+
+
+    /**
+     * 订阅锁释放事件
+     */
+    private Semaphore subscribe() {
+        Semaphore semaphore = new Semaphore(0);
+        stringRedisTemplate.execute((RedisCallback<Object>) connection -> {
+            connection.subscribe((message, pattern) -> semaphore.release(1), getChannelName().getBytes());
+            return null;
+        });
+        return semaphore;
+    }
+
+    /**
+     * 退订锁释放事件
+     */
+    private void unsubscribe() {
+        stringRedisTemplate.execute((RedisCallback<Object>) connection -> {
+            Subscription subscription = connection.getSubscription();
+            if (subscription != null) {
+                subscription.unsubscribe(getChannelName().getBytes());
+            }
+            return null;
+        });
+    }
+
+    /**
+     * 获取事件渠道名称
+     *
+     * @return 事件渠道名称
+     */
+    private String getChannelName() {
+        return prefixName("dc:lock_channel", getKey());
+    }
+
+    private static String prefixName(String prefix, String name) {
+        if (name.contains("{")) {
+            return prefix + ":" + name;
+        }
+        return prefix + ":{" + name + "}";
     }
 }
