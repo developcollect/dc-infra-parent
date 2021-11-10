@@ -3,6 +3,10 @@ package com.developcollect.cache.lock;
 import com.developcollect.core.lang.init.Initable;
 import com.developcollect.core.thread.lock.CacheLock;
 import com.developcollect.core.utils.ServerUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -12,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.LockSupport;
 
+@Slf4j
 public class RedisCacheLock implements CacheLock, Initable {
     private static StringRedisTemplate stringRedisTemplate;
     private static final String SERVER_IDENTITY = Long.toHexString(ServerUtil.getServerIdentity());
@@ -84,6 +89,16 @@ public class RedisCacheLock implements CacheLock, Initable {
     @Override
     public void init(Object... args) {
         RedisCacheLock.stringRedisTemplate = (StringRedisTemplate) args[0];
+        stringRedisTemplate.execute((RedisCallback<String>) connection -> {
+            connection.pSubscribe(new MessageListener() {
+                @Override
+                public void onMessage(Message message, byte[] pattern) {
+                    // todo
+                    log.info("监听到锁释放事件，则立即唤醒等待线程");
+                }
+            });
+            return null;
+        });
     }
 
     @Override
