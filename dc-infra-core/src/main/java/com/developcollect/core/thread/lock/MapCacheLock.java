@@ -1,6 +1,5 @@
 package com.developcollect.core.thread.lock;
 
-import com.developcollect.core.utils.LambdaUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -36,7 +35,11 @@ public class MapCacheLock implements CacheLock {
 
     @Override
     public void lock() {
-        lock(getKey(), true);
+        try {
+            lock(getKey(), true);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException();
+        }
     }
 
     @Override
@@ -104,7 +107,7 @@ public class MapCacheLock implements CacheLock {
     /**
      * 获取锁，如果锁被占用则一直等待
      */
-    private static void lock(Object obj, boolean ignoreInterruptedException) {
+    private static void lock(Object obj, boolean ignoreInterruptedException) throws InterruptedException {
         synchronized (obj) {
             for (; ; ) {
                 if (tryLock0(obj)) {
@@ -115,7 +118,7 @@ public class MapCacheLock implements CacheLock {
                         obj.wait();
                     } catch (InterruptedException e) {
                         if (!ignoreInterruptedException) {
-                            LambdaUtil.raise(e);
+                            throw e;
                         }
                     }
                 }
