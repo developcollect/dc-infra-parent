@@ -32,15 +32,14 @@ public class RedisCacheLock implements CacheLock, Initable {
     /**
      * 延期脚本
      */
-    private static final DefaultRedisScript<Long> RENEW_EXPIRATION_REDIS_SCRIPT = new DefaultRedisScript<>(
+    private static final DefaultRedisScript<Integer> RENEW_EXPIRATION_REDIS_SCRIPT = new DefaultRedisScript<>(
             // 如果锁存在，就延期
-
             "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
                     "redis.call('pexpire', KEYS[1], ARGV[1]); " +
                     "return 1; " +
                     "end; " +
                     "return 0;",
-            Long.class
+            Integer.class
     );
 
     /**
@@ -286,8 +285,10 @@ public class RedisCacheLock implements CacheLock, Initable {
     }
 
     private Boolean renewExpiration(long threadId) {
-        // todo 执行延时脚本
-        return true;
+        // 执行延时脚本
+        Integer result = stringRedisTemplate.execute(RENEW_EXPIRATION_REDIS_SCRIPT, Collections.singletonList(key),
+                getLockName(Thread.currentThread().getId()));
+        return result != null && result == 1;
     }
 
 
