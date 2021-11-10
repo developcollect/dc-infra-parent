@@ -97,6 +97,7 @@ public class RedisCacheLock implements CacheLock, Initable {
             if (tryLock()) {
                 return;
             }
+            // todo 线程休眠改为监听锁释放事件
             LockSupport.parkNanos(this, 1000);
         }
     }
