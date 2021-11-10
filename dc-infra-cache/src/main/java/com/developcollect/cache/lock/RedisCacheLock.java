@@ -22,63 +22,65 @@ public class RedisCacheLock implements CacheLock, Initable {
     private static final String SERVER_IDENTITY = Long.toHexString(ServerUtil.getServerIdentity());
 
 
-    // 延期
-    //                "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
-    //                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
-    //                    "return 1; " +
-    //                "end; " +
-    //                "return 0;",
-
     /**
-     * 通过lua脚本保证释放锁的操作具有原子性
+     * 延期脚本
      */
-//                    "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
-//                    "return nil;" +
-//                "end; " +
-//                "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
-//                "if (counter > 0) then " +
-//                    "redis.call('pexpire', KEYS[1], ARGV[2]); " +
-//                    "return 0; " +
-//                "else " +
-//                    "redis.call('del', KEYS[1]); " +
-//                    "redis.call('publish', KEYS[2], ARGV[1]); " +
-//                    "return 1; "+
-//                "end; " +
-//                "return nil;",
+    private static final DefaultRedisScript<Long> RENEW_EXPIRATION_REDIS_SCRIPT = new DefaultRedisScript<>(
+            // 如果锁存在，就延期
 
-    private static final DefaultRedisScript<Long> releaseLockRedisScript = new DefaultRedisScript<>(
-            "if redis.call('get', KEYS[1]) == ARGV[1] " +
-                    "then " +
-                    "  return redis.call('del', KEYS[1]) " +
-                    "else " +
-                    "  return 0 " +
-                    "end",
+            "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                    "return 1; " +
+                    "end; " +
+                    "return 0;",
             Long.class
     );
-// "if (redis.call('exists', KEYS[1]) == 0) then " +
-//                      "redis.call('hset', KEYS[1], ARGV[2], 1); " +
-//                      "redis.call('pexpire', KEYS[1], ARGV[1]); " +
-//                      "return nil; " +
-//                  "end; " +
-//                  "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
-//                      "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
-//                      "redis.call('pexpire', KEYS[1], ARGV[1]); " +
-//                      "return nil; " +
-//                  "end; " +
-//                  "return redis.call('pttl', KEYS[1]);"
 
-    private static final DefaultRedisScript<Boolean> lockRedisScript = new DefaultRedisScript<>(
-            "local v = redis.call('get', KEYS[1]) " +
-                    "if (v==false or v==ARGV[1]) " +
-                    "then " +
-                    "  redis.call('set', KEYS[1], ARGV[1])  " +
-                    "  redis.call('expire', KEYS[1], ARGV[2]) " +
-                    "  return true " +
-                    "else  " +
-                    "  return false " +
-                    "end ",
-            Boolean.class
+    /**
+     * 解锁脚本
+     */
+    private static final DefaultRedisScript<Long> UNLOCK_REDIS_SCRIPT = new DefaultRedisScript<>(
+            // 如果锁不存在，直接返回
+            "if (redis.call('hexists', KEYS[1], ARGV[3]) == 0) then " +
+                      "return nil;" +
+                    "end; " +
+                    // 给锁的重入次数减1，如果减了之后的数 > 0，说明依然持锁，更新过期时间
+                    // 如果减了之后的数不大于0，则删除key(解锁)，并发布解锁消息
+                    "local counter = redis.call('hincrby', KEYS[1], ARGV[3], -1); " +
+                    "if (counter > 0) then " +
+                      "redis.call('pexpire', KEYS[1], ARGV[2]); " +
+                      "return 0; " +
+                    "else " +
+                      "redis.call('del', KEYS[1]); " +
+                      "redis.call('publish', KEYS[2], ARGV[1]); " +
+                      "return 1; " +
+                    "end; " +
+                    "return nil;",
+            Long.class
     );
+
+
+    /**
+     * 上锁脚本
+     */
+    private static final DefaultRedisScript<Long> TRY_LOCK_REDIS_SCRIPT = new DefaultRedisScript<>(
+            // 如果key不存在，则上锁，并设置过期时间
+            "if (redis.call('exists', KEYS[1]) == 0) then " +
+                    "redis.call('hset', KEYS[1], ARGV[2], 1); " +
+                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                    "return nil; " +
+                    "end; " +
+                    // 如果key存在，并且锁名相同(表示是当前服务的当前线程上的锁),则把值自增(实现锁重入)
+                    "if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then " +
+                    "redis.call('hincrby', KEYS[1], ARGV[2], 1); " +
+                    "redis.call('pexpire', KEYS[1], ARGV[1]); " +
+                    "return nil; " +
+                    "end; " +
+                    // 否则就上锁失败，返回锁上当前的ttl
+                    "return redis.call('pttl', KEYS[1]);",
+            Long.class
+    );
+
 
     private final String key;
 
@@ -178,11 +180,11 @@ public class RedisCacheLock implements CacheLock, Initable {
 
     private static boolean tryLock(String key, long expireTime, TimeUnit timeUnit) {
         long seconds = timeUnit.toSeconds(expireTime);
-        Boolean execute = stringRedisTemplate.execute(
-                lockRedisScript, Collections.singletonList(key),
+        Long ttl = stringRedisTemplate.execute(
+                TRY_LOCK_REDIS_SCRIPT, Collections.singletonList(key),
                 getLockName(Thread.currentThread().getId()), Long.toString(seconds)
         );
-        return execute;
+        return ttl == null;
     }
 
     /**
@@ -194,7 +196,7 @@ public class RedisCacheLock implements CacheLock, Initable {
      * @date 2019/11/14 9:26
      */
     public boolean unlock(String key) {
-        Long result = stringRedisTemplate.execute(releaseLockRedisScript, Collections.singletonList(key),
+        Long result = stringRedisTemplate.execute(UNLOCK_REDIS_SCRIPT, Collections.singletonList(key),
                 getLockName(Thread.currentThread().getId()));
         return Objects.equals(result, 1L);
     }
