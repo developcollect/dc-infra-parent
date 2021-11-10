@@ -1,7 +1,6 @@
 package com.developcollect.core.thread.lock;
 
 import com.developcollect.core.utils.LambdaUtil;
-import com.sun.istack.internal.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -49,7 +48,7 @@ public class MapCacheLock implements CacheLock {
     }
 
     @Override
-    public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException {
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         return tryLock(getKey(), time, unit);
     }
 
