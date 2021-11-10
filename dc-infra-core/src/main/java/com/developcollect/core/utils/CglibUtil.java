@@ -35,7 +35,7 @@ public class CglibUtil {
         DynamicBean dynamicBean = new DynamicBean(dest.getClass(), propertyMap);
 
         // 把扩展属性值复制到新对象
-        addProperties.forEach((k, v) -> dynamicBean.setValue(k, v));
+        addProperties.forEach(dynamicBean::setValue);
         Object target = dynamicBean.getTarget();
         // 把原对象中的属性值复制到新对象
         BeanUtil.copyProperties(dest, target);

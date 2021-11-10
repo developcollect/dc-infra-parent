@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 
 @Slf4j
@@ -25,7 +26,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
-            CacheLock lock = LockUtil.createCacheLock(key);
+            Lock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             System.out.println(StrUtil.format("{}: 尝试上锁", name));
             try {
@@ -69,7 +70,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
-            CacheLock lock = LockUtil.createCacheLock(key);
+            Lock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             int timeout = RandomUtil.randomInt(1, 8);
             try {
@@ -124,7 +125,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
-            CacheLock lock = LockUtil.createCacheLock(key);
+            Lock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             boolean locked;
             try {
@@ -173,7 +174,7 @@ public class LockUtilTest {
         CyclicBarrier cyclicBarrier = new CyclicBarrier(threadNum);
 
         Runnable runnable = () -> {
-            CacheLock lock = LockUtil.createCacheLock(key);
+            Lock lock = LockUtil.createCacheLock(key);
             String name = Thread.currentThread().getName();
             System.out.println(StrUtil.format("{}: 尝试上锁", name));
             try {
@@ -288,7 +289,7 @@ public class LockUtilTest {
 
     private void changePos(long id, Runnable runnable) {
         String lockKey = "STRATEGY_TRADE_LOCK_KEY_PREFIX" + id;
-        CacheLock lock = LockUtil.createCacheLock(lockKey);
+        Lock lock = LockUtil.createCacheLock(lockKey);
         log.debug("[TL] 尝试锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
         lock.lock();
         log.debug("[TL] 获取锁定[{}]  TH:[{}]", id, Thread.currentThread().getName());
