@@ -9,6 +9,8 @@ import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.Subscription;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -283,22 +285,26 @@ public class RedisCacheLock implements CacheLock, Initable {
 
     @Override
     public boolean isLocked() {
-        return false;
+        return Boolean.TRUE.equals(stringRedisTemplate.execute((RedisCallback<Boolean>) redisConnection -> redisConnection.exists(getKey().getBytes())));
     }
 
     @Override
     public boolean isHeldByThread(long threadId) {
-        return false;
+        return stringRedisTemplate.opsForHash().get(getKey(), getLockValue(threadId)) != null;
     }
 
     @Override
     public boolean isHeldByCurrentThread() {
-        return false;
+        return isHeldByThread(Thread.currentThread().getId());
     }
 
     @Override
     public int getHoldCount() {
-        return 0;
+        Object o = stringRedisTemplate.opsForHash().get(getKey(), getLockValue(Thread.currentThread().getId()));
+        if (o == null) {
+            return 0;
+        }
+        return Integer.parseInt(o.toString());
     }
 
     /**
@@ -332,7 +338,8 @@ public class RedisCacheLock implements CacheLock, Initable {
     /**
      * 强制释放锁
      * 直接执行del命令，不判断锁的拥有者
-     * @param key key
+     *
+     * @param key      key
      * @param threadId 线程id
      */
     private boolean forceUnlock(String key, long threadId) {
