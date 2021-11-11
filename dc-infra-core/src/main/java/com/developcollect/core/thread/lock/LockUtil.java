@@ -4,7 +4,6 @@ package com.developcollect.core.thread.lock;
 import com.developcollect.core.lang.init.Initable;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 
 /**
