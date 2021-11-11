@@ -70,6 +70,39 @@ public class MapCacheLock implements CacheLock {
         throw new UnsupportedOperationException("MapCacheLock`s newCondition method is unsupported");
     }
 
+    @Override
+    public boolean forceUnlock() {
+        unlock(getKey());
+        return true;
+    }
+
+    @Override
+    public boolean isLocked() {
+        return THREAD_MAP.containsKey(getKey());
+    }
+
+    @Override
+    public boolean isHeldByThread(long threadId) {
+        Thread thread = THREAD_MAP.get(getKey());
+        if (thread == null) {
+            return false;
+        }
+        return thread.getId() == threadId;
+    }
+
+    @Override
+    public boolean isHeldByCurrentThread() {
+        Thread thread = THREAD_MAP.get(getKey());
+        if (thread == null) {
+            return false;
+        }
+        return thread == Thread.currentThread();
+    }
+
+    @Override
+    public int getHoldCount() {
+        return LOCK_COUNT_MAP.getOrDefault(getKey(), 0);
+    }
 
     /**
      * 在指定时间内尝试获取锁并锁定，如果获取锁成功，返回true，如果超时仍未获取锁，返回false

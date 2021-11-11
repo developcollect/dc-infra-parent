@@ -276,6 +276,31 @@ public class RedisCacheLock implements CacheLock, Initable {
     }
 
 
+    @Override
+    public boolean forceUnlock() {
+        return forceUnlock(getKey(), Thread.currentThread().getId());
+    }
+
+    @Override
+    public boolean isLocked() {
+        return false;
+    }
+
+    @Override
+    public boolean isHeldByThread(long threadId) {
+        return false;
+    }
+
+    @Override
+    public boolean isHeldByCurrentThread() {
+        return false;
+    }
+
+    @Override
+    public int getHoldCount() {
+        return 0;
+    }
+
     /**
      * 释放锁
      *
