@@ -67,6 +67,19 @@ public class RedisCacheLock implements CacheLock, Initable {
             Long.class
     );
 
+    /**
+     * 强制解锁脚本
+     */
+    private static final DefaultRedisScript<Long> FORCE_UNLOCK_REDIS_SCRIPT = new DefaultRedisScript<>(
+            "if (redis.call('del', KEYS[1]) == 1) then "
+                    + "redis.call('publish', KEYS[2], ARGV[1]); "
+                    + "return 1 "
+                    + "else "
+                    + "return 0 "
+                    + "end",
+            Long.class
+    );
+
 
     /**
      * 上锁脚本
@@ -179,7 +192,7 @@ public class RedisCacheLock implements CacheLock, Initable {
                 Long.toString(internalLockLeaseTime), getLockValue(threadId)
         );
 
-        // lock acquired
+        // 上锁成功，安排上自动延时定时任务
         if (ttl == null) {
             scheduleExpirationRenewal(threadId);
         }
@@ -266,7 +279,7 @@ public class RedisCacheLock implements CacheLock, Initable {
     /**
      * 释放锁
      *
-     * @param key 锁ID
+     * @param key key
      * @return boolean 是否成功
      * @author Zhu Kaixiao
      * @date 2019/11/14 9:26
@@ -275,18 +288,37 @@ public class RedisCacheLock implements CacheLock, Initable {
         Long result = stringRedisTemplate.execute(
                 UNLOCK_REDIS_SCRIPT,
                 Arrays.asList(key, getChannelName()),
-                UNLOCK_MESSAGE, Long.toString(internalLockLeaseTime), getLockValue(Thread.currentThread().getId()));
+                UNLOCK_MESSAGE, Long.toString(internalLockLeaseTime), getLockValue(threadId));
 
         boolean unlocked = Objects.equals(result, 1L);
 
         // 解锁成功了，取消掉自动延时定时任务
         if (unlocked) {
-            cancelExpirationRenewal(Thread.currentThread().getId());
+            cancelExpirationRenewal(threadId);
         }
 
         // 返回null，说明如果锁不存在或锁不属于当前线程
         if (result == null) {
             throw new IllegalMonitorStateException("attempt to unlock lock, not locked by current thread by thread-id: " + threadId);
+        }
+        return unlocked;
+    }
+
+    /**
+     * 强制释放锁
+     * 直接执行del命令，不判断锁的拥有者
+     * @param key key
+     * @param threadId 线程id
+     */
+    private boolean forceUnlock(String key, long threadId) {
+        Long result = stringRedisTemplate.execute(
+                FORCE_UNLOCK_REDIS_SCRIPT,
+                Arrays.asList(key, getChannelName()),
+                UNLOCK_MESSAGE, Long.toString(internalLockLeaseTime), getLockValue(threadId));
+        boolean unlocked = Objects.equals(result, 1L);
+        // 解锁成功了，取消掉自动延时定时任务
+        if (unlocked) {
+            cancelExpirationRenewal(threadId);
         }
         return unlocked;
     }
@@ -464,7 +496,7 @@ public class RedisCacheLock implements CacheLock, Initable {
      * 初始化定时器
      */
     private static void initTimer() {
-        timer = new HashedWheelTimer(new DefaultThreadFactory("redisson-timer", true),
+        timer = new HashedWheelTimer(new DefaultThreadFactory("dc-RedisCacheLock-timer", true),
                 100, TimeUnit.MILLISECONDS, 1024, false);
     }
 
