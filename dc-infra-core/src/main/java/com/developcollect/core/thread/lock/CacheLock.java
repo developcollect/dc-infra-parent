@@ -25,7 +25,7 @@ public interface CacheLock extends Lock {
     /**
      * 检查此锁是否被任意线程锁定
      *
-     * @return <code>true</code> if locked otherwise <code>false</code>
+     * @return 如果已锁定返回true，否则返回false
      */
     boolean isLocked();
 
