@@ -14,15 +14,15 @@ import java.util.function.Function;
  */
 @Slf4j
 public class LockUtil extends cn.hutool.core.thread.lock.LockUtil implements Initable {
-    private static Function<String, Lock> CACHE_LOCK_CREATOR = MapCacheLock::new;
+    private static Function<String, CacheLock> CACHE_LOCK_CREATOR = MapCacheLock::new;
 
     @SuppressWarnings("unchecked")
     @Override
     public void init(Object... args) {
-        CACHE_LOCK_CREATOR = (Function<String, Lock>) args[0];
+        CACHE_LOCK_CREATOR = (Function<String, CacheLock>) args[0];
     }
 
-    public static Lock createCacheLock(String key) {
+    public static CacheLock createCacheLock(String key) {
         return CACHE_LOCK_CREATOR.apply(key);
     }
 
