@@ -1,6 +1,5 @@
 package com.developcollect.core.utils;
 
-import cn.hutool.core.lang.Assert;
 import cn.hutool.core.util.RandomUtil;
 
 import java.util.*;
@@ -18,7 +17,6 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 public class CollUtil extends cn.hutool.core.collection.CollUtil {
-
 
 
     /**
@@ -424,7 +422,6 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * @date 2020/10/20 13:59
      * @deprecated {@link #toList(Collection, Function)}
      */
-    @Deprecated
     public static <E, R> List<R> convert(Collection<E> coll, Function<E, R> converter) {
         return coll.stream().map(converter).collect(Collectors.toList());
     }
@@ -453,6 +450,14 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      */
     public static <E, R> List<R> toList(Collection<E> coll, Function<? super E, ? extends R> mapper) {
         return coll.stream().map(mapper).collect(Collectors.toList());
+    }
+
+    public static <E> List<E> toList(Collection<E> coll) {
+        if (coll instanceof List) {
+            return (List<E>) coll;
+        } else {
+            return new ArrayList<>(coll);
+        }
     }
 
     public static <E, R> Set<R> toSet(Collection<E> coll, Function<? super E, ? extends R> mapper) {
@@ -492,11 +497,6 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
         }
         return list;
     }
-
-
-
-
-
 
 
     /**
@@ -630,9 +630,6 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
                 .collect(Collectors.toList());
         return newList;
     }
-
-
-
 
 
 }

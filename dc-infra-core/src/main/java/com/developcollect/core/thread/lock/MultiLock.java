@@ -1,8 +1,8 @@
 package com.developcollect.core.thread.lock;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import com.developcollect.core.utils.CollUtil;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -10,6 +10,14 @@ import java.util.concurrent.locks.Lock;
 public class MultiLock implements Lock {
 
     private List<Lock> locks = new ArrayList<>();
+
+    public MultiLock(Lock... locks) {
+        this.locks = Collections.unmodifiableList(Arrays.asList(locks));
+    }
+
+    public MultiLock(Collection<Lock> locks) {
+        this.locks = Collections.unmodifiableList(CollUtil.toList(locks));
+    }
 
     @Override
     public void lock() {
