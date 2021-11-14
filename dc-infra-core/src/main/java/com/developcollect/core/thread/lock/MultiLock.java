@@ -9,13 +9,13 @@ import java.util.concurrent.locks.Lock;
 
 public class MultiLock implements Lock {
 
-    private List<Lock> locks = new ArrayList<>();
+    private final List<Lock> locks;
 
     public MultiLock(Lock... locks) {
         this.locks = Collections.unmodifiableList(Arrays.asList(locks));
     }
 
-    public MultiLock(Collection<Lock> locks) {
+    public MultiLock(Collection<? extends Lock> locks) {
         this.locks = Collections.unmodifiableList(CollUtil.toList(locks));
     }
 
