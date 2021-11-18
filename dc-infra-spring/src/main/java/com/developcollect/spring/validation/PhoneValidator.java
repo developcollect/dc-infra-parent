@@ -40,17 +40,18 @@ public class PhoneValidator implements ConstraintValidator<Phone, String> {
     }
 
     private String getMessage(Phone.Type[] types, String value) {
+        String msg;
         if (types == null || types.length == 0) {
-            return "手机号格式错误";
-        }
-        if (anno.types().length > 1) {
-            return value.charAt(0) != '1' || value.contains("-")
+            msg = "手机号格式错误";
+        } else if (anno.types().length > 1) {
+            msg = value.charAt(0) != '1' || value.contains("-")
                     ? "座机号格式错误"
                     : "手机号格式错误";
         } else if (anno.types()[0] == Phone.Type.LANDLINE) {
-            return "座机号格式错误";
+            msg = "座机号格式错误";
         } else {
-            return "手机号格式错误";
+            msg = "手机号格式错误";
         }
+        return msg + ": " + value;
     }
 }
