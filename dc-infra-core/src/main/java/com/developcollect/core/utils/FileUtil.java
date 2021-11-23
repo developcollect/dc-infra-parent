@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 /**
  * 文件工具类
- *
  */
 public class FileUtil extends cn.hutool.core.io.FileUtil {
 
@@ -115,6 +114,22 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
     }
 
     /**
+     * 以指定的前缀和后缀名创建临时文件<br>
+     * 创建后的文件名为 [Random].[suffix]
+     * 创建的文件在 System.getProperty("java.io.tmpdir") 文件夹下
+     *
+     * @param prefix
+     * @param suffix
+     * @return java.io.File
+     * @author Zhu Kaixiao
+     * @date 2019/11/23 14:35
+     */
+    public static File createTempFile(String prefix, String suffix) {
+        File tempFile = createTempFileIn(getTmpDirPath(), prefix, suffix);
+        return tempFile;
+    }
+
+    /**
      * 在指定目录下创建临时文件
      *
      * @param dir
@@ -137,10 +152,24 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      * @date 2019/11/23 15:17
      */
     public static File createTempFileIn(String dir, String suffix) {
+        return createTempFileIn(dir, "tempfile", suffix);
+    }
+
+    /**
+     * 在指定目录下以指定前缀和后缀名创建临时文件
+     *
+     * @param prefix
+     * @param dir
+     * @param suffix
+     * @return java.io.File
+     * @author Zhu Kaixiao
+     * @date 2019/11/23 15:17
+     */
+    public static File createTempFileIn(String dir, String prefix, String suffix) {
         if (!suffix.startsWith(StrUtil.DOT)) {
             suffix = StrUtil.DOT + suffix;
         }
-        File tempFile = createTempFile("tempfile", suffix, new File(dir), true);
+        File tempFile = createTempFile(prefix, suffix, new File(dir), true);
         return tempFile;
     }
 
@@ -154,7 +183,7 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      * @date 2019/11/23 14:35
      */
     public static File createTempFile() {
-        File tempFile = createTempFileIn(cn.hutool.core.io.FileUtil.getTmpDirPath(), ".tmp");
+        File tempFile = createTempFileIn(FileUtil.getTmpDirPath(), ".tmp");
         return tempFile;
     }
 
@@ -738,6 +767,7 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      * a,b  ==   a,c,d
      * 同步后：
      * a,b,c,d  ==   a,b,c,d
+     *
      * @param source
      * @param target
      * @author Zhu Kaixiao
