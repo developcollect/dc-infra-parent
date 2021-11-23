@@ -2,22 +2,20 @@ package com.developcollect.core.utils;
 
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.Filter;
-import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.developcollect.core.geo.GeoUtil;
 import com.developcollect.core.geo.Location;
-import com.developcollect.core.geo.Point;
+import com.developcollect.core.geo.tencent.TencentLocationUtil;
 import org.slf4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * 网络相关工具类
@@ -179,38 +177,7 @@ public class NetUtil extends cn.hutool.core.net.NetUtil {
      * @date 2020/4/30 10:23
      */
     public static Location getIpLocation(String ip) {
-        try {
-            String body = HttpRequest
-                    .get(String.format("https://apis.map.qq.com/ws/location/v1/ip?ip=%s&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77", ip))
-                    .header("Referer", "https://lbs.qq.com/service/webService/webServiceGuide/webServiceIp")
-                    .execute()
-                    .body();
-            final JSONObject jo = JSONObject.parseObject(body);
-            if (jo.getIntValue("status") == 0) {
-                Location location = new Location();
-                final JSONObject result = jo.getJSONObject("result");
-                final JSONObject adInfo = result.getJSONObject("ad_info");
-                final JSONObject pointInfo = result.getJSONObject("location");
-                location.setNation(adInfo.getString("nation"));
-                location.setProvince(adInfo.getString("province"));
-                location.setCity(adInfo.getString("city"));
-                location.setDistrict(adInfo.getString("district"));
-                location.setAdcode(adInfo.getInteger("adcode"));
-                if (pointInfo != null) {
-                    Point point = new Point();
-                    location.setPoint(point);
-                    point.setLat(pointInfo.getDouble("lat"));
-                    point.setLng(pointInfo.getDouble("lng"));
-                }
-
-                return location;
-            } else {
-                log.error("调用IP定位接口失败, IP:[{}], Response:[{}]", ip, body);
-            }
-        } catch (Exception e) {
-            log.error("获取IP定位失败, IP:[{}]", ip, e);
-        }
-        return null;
+        return GeoUtil.getIpLocation(ip);
     }
 
     /**
