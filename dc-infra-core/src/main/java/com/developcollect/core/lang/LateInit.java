@@ -22,7 +22,7 @@ public class LateInit<T> implements AutoCloseable {
                 if (ref == null) {
                     ref = supplier.get();
                     if (ref == null) {
-                        throw new IllegalArgumentException("supplier return null!");
+                        throw new IllegalStateException("supplier return null!");
                     }
                 }
             }
