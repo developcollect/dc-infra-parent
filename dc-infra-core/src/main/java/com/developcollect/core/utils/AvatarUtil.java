@@ -10,6 +10,12 @@ import java.math.BigInteger;
 import java.util.Random;
 
 
+/**
+ * 头像工具类
+ * @author zak
+ * @deprecated 使用单独的头像生成项目 dc-avatar
+ */
+@Deprecated
 public class AvatarUtil {
 
     /**
