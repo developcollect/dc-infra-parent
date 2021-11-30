@@ -8,6 +8,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.*;
+import java.util.Optional;
 
 public class MutableBufferedServletResponseWrapper extends HttpServletResponseWrapper implements MutableResponse {
 
@@ -84,12 +85,18 @@ public class MutableBufferedServletResponseWrapper extends HttpServletResponseWr
 
     @Override
     public void setBody(byte[] bytes) {
+        if (bufferedStream == null) {
+            // 触发 bufferedStream 实例化
+            getOutputStream();
+        }
         bufferedStream.setBufferedBytes(bytes);
     }
 
     @Override
     public byte[] getBody() {
-        return bufferedStream.getBufferedBytes();
+        return Optional.ofNullable(bufferedStream)
+                .map(BufferedServletOutputStream::getBufferedBytes)
+                .orElseGet(() -> new byte[0]);
     }
 
 
