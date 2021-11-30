@@ -1,13 +1,6 @@
 package com.developcollect.web.common.http;
 
-public interface MutableRequest {
+public interface MutableRequest extends BodyContainer {
 
-
-    void setBody(byte[] bytes);
-
-
-    default void setBody(String body) {
-        setBody(body.getBytes());
-    }
 
 }

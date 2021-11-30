@@ -70,6 +70,10 @@ public class MutableBufferedServletRequestWrapper extends HttpServletRequestWrap
         this.buffer = bytes;
     }
 
+    @Override
+    public byte[] getBody() {
+        return this.buffer;
+    }
 
     private static class BufferedServletInputStream extends ServletInputStream {
         private ByteArrayInputStream inputStream;
