@@ -42,7 +42,7 @@ public class SmsTokenGranter implements TokenGranter {
     private void validSmsCode(String mobile, String code) {
         try {
             // todo 记录匹配错误次数，超过5次在清除缓存，避免穷举
-            if (CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, code, true)) {
+            if (!CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, code, true)) {
                 throw new BadCredentialsException("验证码错误");
             }
         } catch (Exception e) {
