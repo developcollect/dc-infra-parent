@@ -46,4 +46,9 @@ public interface Cache<K, V>  {
     default long getAge(K key) {
         return getAge(key, TimeUnit.SECONDS);
     }
+
+
+    int incr(K key);
+
+    int incr(K key, long timeout, TimeUnit timeUnit);
 }

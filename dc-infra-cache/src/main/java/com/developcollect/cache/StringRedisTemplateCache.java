@@ -61,4 +61,16 @@ public class StringRedisTemplateCache implements Cache<String, String> {
         return age;
     }
 
+    @Override
+    public int incr(String key) {
+        Long increment = redisTemplate.opsForValue().increment(key);
+        return increment.intValue();
+    }
+
+    @Override
+    public int incr(String key, long timeout, TimeUnit timeUnit) {
+        Long increment = redisTemplate.opsForValue().increment(key);
+        redisTemplate.expire(key, timeout, timeUnit);
+        return increment.intValue();
+    }
 }

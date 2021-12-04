@@ -16,6 +16,7 @@ public class SmsTokenGranter implements TokenGranter {
 
     private static final String GRANT_TYPE = "sms";
     private static final String CACHE_CODE_KEY_PREFIX = "DC_SECURITY_SMS_CODE:";
+    private static final String CACHE_CODE_FAIL_COUNT_KEY_PREFIX = "DC_SECURITY_SMS_CODE_FAIL_COUNT:";
 
     @Setter
     private UserDetailsService userDetailsService;
@@ -41,8 +42,8 @@ public class SmsTokenGranter implements TokenGranter {
 
     private void validSmsCode(String mobile, String code) {
         try {
-            // todo 记录匹配错误次数，超过5次在清除缓存，避免穷举
-            if (!CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, code, true)) {
+            // 超过5次在清除缓存，避免穷举
+            if (!CaptchaUtil.match(CACHE_CODE_KEY_PREFIX + mobile, code, 5, true)) {
                 throw new BadCredentialsException("验证码错误");
             }
         } catch (Exception e) {
