@@ -6,6 +6,20 @@ import java.util.function.ToDoubleFunction;
 
 public class RandomUtil extends cn.hutool.core.util.RandomUtil {
 
+    /**
+     * 用于随机选的符号
+     */
+    public static final String BASE_SYMBOL = "\\!@#$%^&*()_+=-}{[] ';\":<>?/|.,?`~";
+
+    /**
+     * 用于随机选的大写字母
+     */
+    public static final String BASE_UPPER_CHAR = BASE_CHAR.toUpperCase();
+
+    /**
+     * 用于随机选的字符，包含数字、大小写字母、符号
+     */
+    public static final String BASE_ALL = BASE_NUMBER + BASE_CHAR + BASE_UPPER_CHAR + BASE_SYMBOL;
 
     /**
      * 带有权重的随机生成器

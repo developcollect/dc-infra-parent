@@ -30,7 +30,7 @@ public class CacheUtil {
         cache.set(key, value, timeout, timeUnit);
     }
 
-    public static void  set(String key, String value, Duration duration) {
+    public static void set(String key, String value, Duration duration) {
         cache.set(key, value, duration);
     }
 
@@ -73,10 +73,24 @@ public class CacheUtil {
     /**
      * 删除指定key的缓存
      * 无论key是否存在，只要删除没有出错则返回true
+     *
      * @param key 缓存的key
      * @return 是否删除完成
      */
     public static boolean delete(String key) {
         return cache.del(key);
+    }
+
+
+    /**
+     * 自增指定的key
+     * 如果key不存在，则变成1
+     */
+    public static int incr(String key) {
+        return cache.incr(key);
+    }
+
+    public static int incr(String key, long timeout, TimeUnit timeUnit) {
+        return cache.incr(key, timeout, timeUnit);
     }
 }

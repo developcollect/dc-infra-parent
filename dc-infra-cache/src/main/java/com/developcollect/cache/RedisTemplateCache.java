@@ -66,4 +66,16 @@ public class RedisTemplateCache<K, V> implements Cache<K, V> {
     }
 
 
+    @Override
+    public int incr(K key) {
+        Long increment = redisTemplate.opsForValue().increment(key);
+        return increment.intValue();
+    }
+
+    @Override
+    public int incr(K key, long timeout, TimeUnit timeUnit) {
+        Long increment = redisTemplate.opsForValue().increment(key);
+        redisTemplate.expire(key, timeout, timeUnit);
+        return increment.intValue();
+    }
 }
