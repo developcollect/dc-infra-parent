@@ -22,10 +22,16 @@ public class RefreshTokenGranter implements TokenGranter {
         String refreshToken = requestParameters.get("refreshToken");
 
         if (!tokenProcessor.verify(refreshToken)) {
-            throw new BadCredentialsException("invalid token");
+            throw new BadCredentialsException("无效的token");
         }
 
-        Authentication authentication = tokenProcessor.loadAuthentication(refreshToken);
+        Authentication authentication;
+        try {
+            authentication = tokenProcessor.loadAuthentication(refreshToken);
+        } catch (Exception e) {
+            throw new BadCredentialsException("无效的token", e);
+        }
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(authentication.getPrincipal().toString());
 
         return tokenProcessor.grantToken(tokenRequest, userDetails);
