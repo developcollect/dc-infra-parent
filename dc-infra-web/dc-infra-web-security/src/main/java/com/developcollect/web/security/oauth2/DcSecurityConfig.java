@@ -5,6 +5,7 @@ import com.developcollect.core.web.common.R;
 import com.developcollect.extra.servlet.ServletUtil;
 import com.developcollect.web.security.oauth2.auth.JwtTokenAuthProvider;
 import com.developcollect.web.security.oauth2.auth.TokenAuthenticationProcessingFilter;
+import com.developcollect.web.security.oauth2.auth.JwtTokenProcessor;
 import com.developcollect.web.security.oauth2.auth.TokenProcessor;
 import com.developcollect.web.security.oauth2.refresh.RefreshTokenGranter;
 import com.developcollect.web.security.oauth2.usernaem.UsernamePasswordTokenGranter;
@@ -97,7 +98,7 @@ public class DcSecurityConfig extends WebSecurityConfigurerAdapter {
         if (tokenKey == null) {
             tokenKey = "ulxzsy0f6zhlfv3454sg3pwmcd42jm8x";
         }
-        return new TokenProcessor(tokenKey);
+        return new JwtTokenProcessor(tokenKey);
     }
 
     @Bean

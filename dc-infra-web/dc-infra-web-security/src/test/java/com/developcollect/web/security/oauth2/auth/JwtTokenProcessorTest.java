@@ -6,9 +6,9 @@ import org.junit.Test;
 
 import java.util.Date;
 
-public class TokenProcessorTest {
+public class JwtTokenProcessorTest {
 
-    private static TokenProcessor tokenProcessor = new TokenProcessor("KNJIHQWESNXHHOIWHE98273NH98Y823H98HJKFAH8SDY1");
+    private static JwtTokenProcessor tokenProcessor = new JwtTokenProcessor("KNJIHQWESNXHHOIWHE98273NH98Y823H98HJKFAH8SDY1");
 
     @Test
     public void test_token() {
