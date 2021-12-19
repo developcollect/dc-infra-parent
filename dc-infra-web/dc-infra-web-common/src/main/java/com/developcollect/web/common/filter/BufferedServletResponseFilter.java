@@ -1,9 +1,11 @@
 package com.developcollect.web.common.filter;
 
+import com.developcollect.extra.servlet.ServletUtil;
 import com.developcollect.web.common.http.wrapper.MutableBufferedServletResponseWrapper;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
@@ -15,10 +17,15 @@ public class BufferedServletResponseFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-        MutableBufferedServletResponseWrapper mutableBufferedServletResponseWrapper = new MutableBufferedServletResponseWrapper(httpServletResponse);
-        chain.doFilter(request, mutableBufferedServletResponseWrapper);
-        mutableBufferedServletResponseWrapper.processOutbound();
+        if (!ServletUtil.isMultipart(httpServletRequest)) {
+            MutableBufferedServletResponseWrapper mutableBufferedServletResponseWrapper = new MutableBufferedServletResponseWrapper(httpServletResponse);
+            chain.doFilter(request, mutableBufferedServletResponseWrapper);
+            mutableBufferedServletResponseWrapper.processOutbound();
+        } else {
+            chain.doFilter(request, response);
+        }
     }
 
     @Override
