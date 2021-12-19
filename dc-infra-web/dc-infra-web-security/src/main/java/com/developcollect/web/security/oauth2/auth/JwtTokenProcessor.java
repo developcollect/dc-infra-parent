@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JwtTokenProcessor implements TokenProcessor {
 
-
-
     protected final JWTSigner jwtSigner;
     protected static final int DEFAULT_EXPIRES = 2 * 60 * 60;
     protected static final int DEFAULT_REFRESH_EXPIRES = 3 * 60 * 60;

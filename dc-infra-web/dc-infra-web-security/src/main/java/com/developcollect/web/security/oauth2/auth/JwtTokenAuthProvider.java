@@ -22,8 +22,12 @@ public class JwtTokenAuthProvider implements AuthenticationProvider {
             throw new BadCredentialsException("无效的token");
         }
 
-        Authentication auth = tokenProcessor.loadAuthentication(jwtAuthenticationToken.getPrincipal().toString());
-        return auth;
+        try {
+            Authentication auth = tokenProcessor.loadAuthentication(jwtAuthenticationToken.getPrincipal().toString());
+            return auth;
+        } catch (Exception e) {
+            throw new BadCredentialsException("无效的token", e);
+        }
     }
 
     @Override
