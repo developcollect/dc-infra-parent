@@ -14,13 +14,13 @@ public class DesensitizedUtil extends cn.hutool.core.util.DesensitizedUtil {
     }
 
     /**
-     * 【手机号码】前三位，后4位，其他隐藏，比如135****2210
+     * 【手机号码】前2位，后3位，其他隐藏，比如13******210
      *
      * @param num 移动电话；
      * @return 脱敏后的移动电话；
      */
     public static String mobilePhone(String num) {
-        return mobilePhone(num, 3, 4);
+        return mobilePhone(num, 2, 3);
     }
 
     public static String mobilePhone(String num, int front, int end) {
