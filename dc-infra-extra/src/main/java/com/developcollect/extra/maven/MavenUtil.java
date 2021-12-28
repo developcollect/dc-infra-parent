@@ -47,11 +47,9 @@ public class MavenUtil {
      * @param pomPath pom文件路径或项目路径
      * @return 依赖列表
      */
-    public static Map<Artifact, List<Dependency>> getDependencyList(String pomPath) {
-        Map<Artifact, List<Dependency>> resultMap = new HashMap<>(8);
-
-        AtomicReference<List<Dependency>> currList = new AtomicReference<>();
-        AtomicReference<Artifact> currArtifact = new AtomicReference<>();
+    public static List<Module> getDependencyList(String pomPath) {
+        List<Module> modules = new ArrayList<>();
+        AtomicReference<Module> currModule = new AtomicReference<>();
 
         mvn(pomPath, Collections.singletonList("dependency:list"), s -> {
             if (s.startsWith("[INFO] ")) {
@@ -60,7 +58,7 @@ public class MavenUtil {
                 // dependency 解析
                 Matcher dependencyMatcher = DEPENDENCY_PATTERN.matcher(line);
                 if (dependencyMatcher.find()) {
-                    List<Dependency> dependencies = currList.get();
+                    List<Dependency> dependencies = currModule.get().getDependencies();
                     Dependency dependency = new Dependency();
                     dependency.setGroupId(dependencyMatcher.group(1));
                     dependency.setArtifactId(dependencyMatcher.group(2));
@@ -76,20 +74,22 @@ public class MavenUtil {
                 Matcher titleMatcher = TITLE_PATTERN.matcher(line);
                 if (titleMatcher.find()) {
                     Artifact artifact = new Artifact();
-                    ArrayList<Dependency> dependencyList = new ArrayList<>();
                     artifact.setGroupId(titleMatcher.group(1));
                     artifact.setArtifactId(titleMatcher.group(2));
 
-                    resultMap.put(artifact, dependencyList);
-                    currArtifact.set(artifact);
-                    currList.set(dependencyList);
+                    Module module = new Module();
+                    module.setArtifact(artifact);
+                    module.setDependencies(new ArrayList<>());
+
+                    currModule.set(module);
+                    modules.add(module);
                     return;
                 }
 
                 // version
                 Matcher versionMatcher = VERSION_PATTERN.matcher(line);
                 if (versionMatcher.find()) {
-                    Artifact artifact = currArtifact.get();
+                    Artifact artifact = currModule.get().getArtifact();
                     if (artifact == null) {
                         throw new RuntimeException("artifact is null");
                     }
@@ -100,7 +100,7 @@ public class MavenUtil {
             }
         });
 
-        return resultMap;
+        return modules;
     }
 
     /**

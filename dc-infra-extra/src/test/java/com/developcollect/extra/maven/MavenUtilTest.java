@@ -46,7 +46,7 @@ public class MavenUtilTest {
 
     @Test
     public void test_list() {
-        Map<Artifact, List<Dependency>> dependencyList = MavenUtil.getDependencyList("D:\\code\\sl\\dc-infra-parent");
-        System.out.println(dependencyList);
+        List<Module> modules = MavenUtil.getDependencyList("D:\\code\\sl\\dc-infra-parent");
+        System.out.println(modules);
     }
 }
