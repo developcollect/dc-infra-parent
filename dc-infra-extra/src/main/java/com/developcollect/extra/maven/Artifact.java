@@ -10,4 +10,9 @@ public class Artifact {
     private String version;
 
 
+    @Override
+    public String toString() {
+        return getGroupId() + ":" + getArtifactId() + ":" + getVersion();
+    }
+
 }

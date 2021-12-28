@@ -11,4 +11,8 @@ public class Dependency {
     private String scope;
     private String type;
 
+    @Override
+    public String toString() {
+        return getGroupId() + ":" + getArtifactId() + ":" + getType() + ":" + getVersion() + ":" + getScope();
+    }
 }
