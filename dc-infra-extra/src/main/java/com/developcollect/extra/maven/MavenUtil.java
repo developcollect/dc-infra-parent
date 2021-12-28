@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MavenUtil {
     private static final Pattern TITLE_PATTERN = Pattern.compile("-*?< (.+?):(.+?) >-*?");
-    private static final Pattern VERSION_PATTERN = Pattern.compile("Building (.+?) (.+?) *?\\[\\d+?/\\d+?]");
+
     private static final Pattern DEPENDENCY_PATTERN = Pattern.compile(" {3}(.*?):(.*?):(.*?):(.*?):(.*)");
 
     private static final String POM_FILENAME = "pom.xml";
@@ -87,16 +87,20 @@ public class MavenUtil {
                 }
 
                 // version
-                Matcher versionMatcher = VERSION_PATTERN.matcher(line);
-                if (versionMatcher.find()) {
+                //  Building app-front web 1.0.1-SNAPSHOT
+                //  Building bs-ncc-api 1.1.5-SNAPSHOT                                [2/10]
+                if (line.startsWith("Building ")) {
+                    String versionLine = line.substring(9);
+                    versionLine = versionLine.replaceFirst(" *?\\[\\d+?/\\d+?]$", "");
+                    int idx = versionLine.lastIndexOf(" ");
+                    String version = versionLine.substring(idx + 1);
                     Artifact artifact = currModule.get().getArtifact();
                     if (artifact == null) {
                         throw new RuntimeException("artifact is null");
                     }
-                    artifact.setVersion(versionMatcher.group(2));
+                    artifact.setVersion(version);
                     return;
                 }
-
             }
         });
 
