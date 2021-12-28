@@ -9,7 +9,7 @@
 	<groupId>com.developcollect</groupId>
 	<artifactId>dc-infra-parent</artifactId>
 	<version>1.1.1</version>
-	<name>dc-infra</name>
+	<name>dc-infra-parent</name>
 	<description>dc-infra是一系列工具包集合</description>
 	<url>https://github.com/developcollect/dc-infra-parent</url>
 

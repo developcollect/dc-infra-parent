@@ -3,6 +3,7 @@ package com.developcollect.extra.maven;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 public class MavenUtilTest {
 
@@ -41,5 +42,11 @@ public class MavenUtilTest {
     @Test
     public void test_package() {
         MavenUtil.mvn("/Volumes/D2/code/java-projects/first", "package");
+    }
+
+    @Test
+    public void test_list() {
+        Map<Artifact, List<Dependency>> dependencyList = MavenUtil.getDependencyList("D:\\code\\sl\\dc-infra-parent");
+        System.out.println(dependencyList);
     }
 }

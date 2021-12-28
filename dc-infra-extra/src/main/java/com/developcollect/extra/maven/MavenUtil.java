@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class MavenUtil {
+    private static final Pattern TITLE_PATTERN = Pattern.compile("-*?< (.+?):(.+?) >-*?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("Building (.+?) (.+?) *?\\[\\d+?/\\d+?]");
+    private static final Pattern DEPENDENCY_PATTERN = Pattern.compile(" {3}(.*?):(.*?):(.*?):(.*?):(.*?)");
 
     private static final String POM_FILENAME = "pom.xml";
 
@@ -35,6 +38,83 @@ public class MavenUtil {
             System.setProperty("maven.home", mavenHome);
         }
     }
+
+
+    /**
+     * 获取项目的依赖列表
+     * http://maven.apache.org/plugins/maven-dependency-plugin/list-mojo.html
+     *
+     * @param pomPath pom文件路径或项目路径
+     * @return 依赖列表
+     */
+    public static Map<Artifact, List<Dependency>> getDependencyList(String pomPath) {
+        Map<Artifact, List<Dependency>> resultMap = new HashMap<>(8);
+
+        AtomicReference<List<Dependency>> currList = new AtomicReference<>();
+        AtomicReference<Artifact> currArtifact = new AtomicReference<>();
+
+        mvn(pomPath, Collections.singletonList("dependency:list"), s -> {
+            if (s.startsWith("[INFO] ")) {
+                String line = s.substring(7);
+
+                // dependency 解析
+                Matcher dependencyMatcher = DEPENDENCY_PATTERN.matcher(line);
+                if (dependencyMatcher.find()) {
+                    List<Dependency> dependencies = currList.get();
+                    Dependency dependency = new Dependency();
+                    dependency.setGroupId(dependencyMatcher.group(1));
+                    dependency.setArtifactId(dependencyMatcher.group(2));
+                    dependency.setType(dependencyMatcher.group(3));
+                    dependency.setVersion(dependencyMatcher.group(4));
+                    dependency.setScope(dependencyMatcher.group(5));
+
+                    dependencies.add(dependency);
+                    return;
+                }
+
+                // title 解析
+                Matcher titleMatcher = TITLE_PATTERN.matcher(line);
+                if (titleMatcher.find()) {
+                    Artifact artifact = new Artifact();
+                    ArrayList<Dependency> dependencyList = new ArrayList<>();
+                    artifact.setGroupId(titleMatcher.group(1));
+                    artifact.setArtifactId(titleMatcher.group(2));
+
+                    resultMap.put(artifact, dependencyList);
+                    currArtifact.set(artifact);
+                    currList.set(dependencyList);
+                    return;
+                }
+
+                // version
+                Matcher versionMatcher = VERSION_PATTERN.matcher(line);
+                if (versionMatcher.find()) {
+                    Artifact artifact = currArtifact.get();
+                    if (artifact == null) {
+                        throw new RuntimeException("artifact is null");
+                    }
+                    artifact.setVersion(versionMatcher.group(2));
+                    return;
+                }
+
+            }
+        });
+
+        return resultMap;
+    }
+
+    /**
+     * “+-”      后面的jar包是顶层依赖包，在pom中进行了声明；
+     *
+     * “|  \-”    后面的jar包是引用包，未在pom中声明；只要声明顶层包，其对应的引用包会自动去仓库中下载；
+     *
+     * “\-”，    不管在pom文件中最后一个依赖引用是哪个，其前缀都是“\-”，即 ”\-” 仅表后最后一个依赖引用；
+     */
+    public static void getDependencyTree(String pomPath) {
+        // mvn dependency:tree
+        // TODO
+    }
+
 
     /**
      * 分析项目模块结构

@@ -143,6 +143,8 @@
             <optional>true</optional>
         </dependency>
 
+
+
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -155,11 +157,13 @@
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-codec</artifactId>
             <version>${batik.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-transcoder</artifactId>
             <version>${batik.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
