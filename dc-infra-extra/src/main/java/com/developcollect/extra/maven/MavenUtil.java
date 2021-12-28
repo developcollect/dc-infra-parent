@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class MavenUtil {
     private static final Pattern TITLE_PATTERN = Pattern.compile("-*?< (.+?):(.+?) >-*?");
     private static final Pattern VERSION_PATTERN = Pattern.compile("Building (.+?) (.+?) *?\\[\\d+?/\\d+?]");
-    private static final Pattern DEPENDENCY_PATTERN = Pattern.compile(" {3}(.*?):(.*?):(.*?):(.*?):(.*?)");
+    private static final Pattern DEPENDENCY_PATTERN = Pattern.compile(" {3}(.*?):(.*?):(.*?):(.*?):(.*)");
 
     private static final String POM_FILENAME = "pom.xml";
 
