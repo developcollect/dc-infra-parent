@@ -1,5 +1,7 @@
 package com.developcollect.core.lang.supplier;
 
+import com.developcollect.core.lang.Assert;
+
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,10 +17,12 @@ public class ConcurrentArrayLoopSupplier<T> implements ResettableSupplier<T> {
     private final AtomicInteger cursor = new AtomicInteger(0);
 
     public ConcurrentArrayLoopSupplier(Collection<T> coll) {
+        Assert.notEmpty(coll);
         this.array = coll.toArray();
     }
 
     public ConcurrentArrayLoopSupplier(T[] array) {
+        Assert.notEmpty(array);
         this.array = array;
     }
 
@@ -32,6 +36,6 @@ public class ConcurrentArrayLoopSupplier<T> implements ResettableSupplier<T> {
 
     @Override
     public void reset() {
-        cursor.lazySet(0);
+        cursor.set(0);
     }
 }
