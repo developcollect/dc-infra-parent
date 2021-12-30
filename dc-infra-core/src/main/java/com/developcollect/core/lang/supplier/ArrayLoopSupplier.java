@@ -8,7 +8,7 @@ import java.util.Collection;
 /**
  * 循环从数组中返回元素，无穷无尽
  */
-public class ArrayLoopSupplier<T> implements ResettableSupplier<T> {
+public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
 
     /**
      * 元素数组
@@ -42,5 +42,10 @@ public class ArrayLoopSupplier<T> implements ResettableSupplier<T> {
     @Override
     public void reset() {
         cursor = 0;
+    }
+
+    @Override
+    public boolean atHead() {
+        return cursor == 0;
     }
 }

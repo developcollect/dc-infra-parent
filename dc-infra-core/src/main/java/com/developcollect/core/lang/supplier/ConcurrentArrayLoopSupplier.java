@@ -5,7 +5,7 @@ import com.developcollect.core.lang.Assert;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConcurrentArrayLoopSupplier<T> implements ResettableSupplier<T> {
+public class ConcurrentArrayLoopSupplier<T> implements LoopSupplier<T> {
 
     /**
      * 元素数组
@@ -37,5 +37,10 @@ public class ConcurrentArrayLoopSupplier<T> implements ResettableSupplier<T> {
     @Override
     public void reset() {
         cursor.set(0);
+    }
+
+    @Override
+    public boolean atHead() {
+        return cursor.get() == 0;
     }
 }
