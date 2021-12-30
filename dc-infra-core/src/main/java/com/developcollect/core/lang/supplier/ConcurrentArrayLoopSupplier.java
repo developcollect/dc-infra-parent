@@ -2,9 +2,8 @@ package com.developcollect.core.lang.supplier;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
-public class ConcurrentLoopSupplier<T> implements Supplier<T> {
+public class ConcurrentArrayLoopSupplier<T> implements LoopSupplier<T> {
 
     /**
      * 元素数组
@@ -15,11 +14,11 @@ public class ConcurrentLoopSupplier<T> implements Supplier<T> {
      */
     private final AtomicInteger cursor = new AtomicInteger(0);
 
-    public ConcurrentLoopSupplier(Collection<T> coll) {
+    public ConcurrentArrayLoopSupplier(Collection<T> coll) {
         this.array = coll.toArray();
     }
 
-    public ConcurrentLoopSupplier(T[] array) {
+    public ConcurrentArrayLoopSupplier(T[] array) {
         this.array = array;
     }
 
@@ -30,4 +29,8 @@ public class ConcurrentLoopSupplier<T> implements Supplier<T> {
         return (T) array[idx];
     }
 
+    @Override
+    public void reset() {
+        cursor.lazySet(0);
+    }
 }
