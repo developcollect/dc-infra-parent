@@ -4,5 +4,5 @@ import com.developcollect.core.lang.Resettable;
 
 import java.util.function.Supplier;
 
-public interface LoopSupplier<T> extends Supplier<T>, Resettable {
+public interface ResettableSupplier<T> extends Supplier<T>, Resettable {
 }

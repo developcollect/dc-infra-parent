@@ -3,7 +3,7 @@ package com.developcollect.core.lang.supplier;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConcurrentArrayLoopSupplier<T> implements LoopSupplier<T> {
+public class ConcurrentArrayLoopSupplier<T> implements ResettableSupplier<T> {
 
     /**
      * 元素数组
@@ -24,6 +24,7 @@ public class ConcurrentArrayLoopSupplier<T> implements LoopSupplier<T> {
 
 
     @Override
+    @SuppressWarnings("unchecked")
     public T get() {
         int idx = cursor.getAndUpdate(prev -> prev + 1 == array.length ? 0 : prev + 1);
         return (T) array[idx];

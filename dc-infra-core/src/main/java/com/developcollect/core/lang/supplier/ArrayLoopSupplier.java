@@ -6,7 +6,7 @@ import java.util.Collection;
 /**
  * 循环从数组中返回元素，无穷无尽
  */
-public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
+public class ArrayLoopSupplier<T> implements ResettableSupplier<T> {
 
     /**
      * 元素数组
@@ -26,6 +26,7 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public T get() {
         int idx = cursor++;
         if (cursor == array.length) {
