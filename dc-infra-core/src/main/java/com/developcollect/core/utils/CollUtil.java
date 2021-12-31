@@ -1,7 +1,5 @@
 package com.developcollect.core.utils;
 
-import cn.hutool.core.util.RandomUtil;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,17 +21,17 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * 去重
      *
      * @param list
-     * @param hashCodeCalculator
+     * @param hash
      * @return java.util.List<T>
      */
-    public static <T> List<T> distinct(List<T> list, ToIntFunction<T> hashCodeCalculator) {
+    public static <T> List<T> distinct(List<T> list, ToIntFunction<T> hash) {
         if (isEmpty(list)) {
             return list;
         }
         Iterator<T> iterator = list.iterator();
         Set<Integer> hashCodeSet = new HashSet<>();
         while (iterator.hasNext()) {
-            int hashCode = hashCodeCalculator.applyAsInt(iterator.next());
+            int hashCode = hash.applyAsInt(iterator.next());
             if (hashCodeSet.contains(hashCode)) {
                 iterator.remove();
             } else {
@@ -56,9 +54,7 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * @date 2020/8/24 9:57
      */
     public static <T> List<T> shuffle(List<T> list) {
-        for (int i = list.size() - 1; i > 0; i--) {
-            swap(list, i, RandomUtil.randomInt(i + 1));
-        }
+        Collections.shuffle(list);
         return list;
     }
 
@@ -67,14 +63,14 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * 交换集合中的两个元素
      *
      * @param list
-     * @param a
-     * @param b
+     * @param i
+     * @param j
      * @return java.util.List<T>
      * @author zak
      * @date 2020/8/24 10:04
      */
-    public static <T> List<T> swap(List<T> list, int a, int b) {
-        Collections.swap(list, a, b);
+    public static <T> List<T> swap(List<T> list, int i, int j) {
+        Collections.swap(list, i, j);
         return list;
     }
 
@@ -93,8 +89,17 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
     }
 
 
+    /**
+     * 获取集合中满足指定条件的第一个元素
+     *
+     * @param collection 集合
+     * @param function   转换方法
+     * @param value      预计值
+     * @deprecated use {@link CollUtil#findFirst(Iterable, Function, Object)}
+     */
+    @Deprecated
     public static <T> T get(final Collection<T> collection, final Function<T, Object> function, final Object value) {
-        return get(collection, ele -> Objects.equals(function.apply(ele), value));
+        return findFirst(collection, function, value);
     }
 
     /**
@@ -105,35 +110,102 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * @return boolean
      * @author zak
      * @date 2020/8/24 9:39
+     * @deprecated use {@link CollUtil#findFirst(Iterable, Predicate)}
      */
+    @Deprecated
     public static <T> T get(final Collection<T> collection, final Predicate<T> predicate) {
-        for (T ele : collection) {
-            if (ele != null && predicate.test(ele)) {
-                return ele;
+        return findFirst(collection, predicate);
+    }
+
+    /**
+     * 获取集合中满足指定条件的第一个元素
+     *
+     * @param collection 集合
+     * @param predicate  条件
+     * @return 满足指定条件的第一个元素
+     */
+    public static <T> T findFirst(Iterable<T> collection, Predicate<T> predicate) {
+        if (null != collection) {
+            for (T t : collection) {
+                if (predicate.test(t)) {
+                    return t;
+                }
             }
+        }
+        return null;
+    }
+
+    public static <T> T findFirst(Iterable<T> collection, final Function<T, Object> function, final Object value) {
+        return findFirst(collection, ele -> Objects.equals(function.apply(ele), value));
+    }
+
+    /**
+     * 获取集合中满足指定条件的所有元素
+     * 该方法不修改原始集合
+     *
+     * @param collection 集合
+     * @param predicate  条件
+     * @return 满足指定条件的第一个元素
+     */
+    public static <T> List<T> findAll(Iterable<T> collection, Predicate<T> predicate) {
+        if (null != collection) {
+            List<T> ret = new ArrayList<>();
+            for (T t : collection) {
+                if (predicate.test(t)) {
+                    ret.add(t);
+                }
+            }
+            return ret;
         }
         return null;
     }
 
     /**
-     * 获取集合中满足指定条件的第一个元素的下标
+     * 获取集合中所有经过function转换后值和value相等的元素
      *
-     * @param list      集合
-     * @param predicate 条件
-     * @return boolean
-     * @author zak
-     * @date 2020/8/24 9:39
+     * @param collection 集合
+     * @param function   转换方法
+     * @param value      预计值
+     * @param <T>        元素类型
+     * @return 所有经过function转换后值和value相等的元素
      */
-    public static <T> Integer getIndex(final List<T> list, final Predicate<T> predicate) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i) != null && predicate.test(list.get(i))) {
-                return i;
-            }
-        }
-        return null;
+    public static <T> List<T> findAll(Iterable<T> collection, final Function<T, Object> function, final Object value) {
+        return findAll(collection, ele -> Objects.equals(function.apply(ele), value));
     }
 
 
+    /**
+     * 获取集合中满足指定条件的第一个元素的下标，如果没有满足条件的元素，则返回-1
+     *
+     * @param coll      集合
+     * @param predicate 条件
+     * @return 满足指定条件的第一个元素的下标，如果没有满足条件的元素，则返回-1
+     */
+    public static <T> int firstIndex(Iterable<T> coll, final Predicate<T> predicate) {
+        if (coll != null) {
+            int i = 0;
+            for (T t : coll) {
+                if (predicate.test(t)) {
+                    return i;
+                }
+                ++i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * 获取集合中所有经过function转换后值和value相等的元素
+     *
+     * @param collection 集合
+     * @param function   转换方法
+     * @param value      预计值
+     * @param <T>        元素类型
+     * @return 所有经过function转换后值和value相等的元素
+     * @deprecated use {@link CollUtil#findAll(Iterable, Function, Object)}
+     */
+    @Deprecated
     public static <T> List<T> sub(final Collection<T> collection, final Function<T, Object> function, final Object value) {
         return sub(collection, ele -> Objects.equals(function.apply(ele), value));
     }
@@ -144,19 +216,11 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
      * @param collection 集合
      * @param predicate  条件
      * @return boolean
-     * @author zak
-     * @date 2020/8/24 9:39
+     * @deprecated use {@link CollUtil#findAll(Iterable, Predicate)}
      */
+    @Deprecated
     public static <T> List<T> sub(final Collection<T> collection, final Predicate<T> predicate) {
-        List<T> list = new ArrayList<>();
-
-        for (T ele : collection) {
-            if (ele != null && predicate.test(ele)) {
-                list.add(ele);
-            }
-        }
-
-        return list;
+        return findAll(collection, predicate);
     }
 
     public static <T> T computeIfAbsent(Collection<T> collection, Function<T, Object> function, Object value, Supplier<T> supplier) {
@@ -391,8 +455,8 @@ public class CollUtil extends cn.hutool.core.collection.CollUtil {
             final List<E2> targetList,
             final Function<E2, Object> function2
     ) {
-        targetList.sort((o1, o2) -> Optional.ofNullable(getIndex(sourceList, e1 -> Objects.equals(function1.apply(e1), function2.apply(o1)))).orElse(Integer.MAX_VALUE)
-                - Optional.ofNullable(getIndex(sourceList, e1 -> Objects.equals(function1.apply(e1), function2.apply(o2)))).orElse(Integer.MAX_VALUE));
+        targetList.sort((o1, o2) -> firstIndex(sourceList, e1 -> Objects.equals(function1.apply(e1), function2.apply(o1)))
+                - firstIndex(sourceList, e1 -> Objects.equals(function1.apply(e1), function2.apply(o2))));
         return targetList;
     }
 
