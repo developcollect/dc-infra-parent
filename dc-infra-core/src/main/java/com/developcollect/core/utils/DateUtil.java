@@ -1002,6 +1002,18 @@ public class DateUtil extends cn.hutool.core.date.DateUtil {
 
         return format;
     }
+
+    /**
+     * 按指定的周期获取起始时间
+     *
+     * @param time   指定的时间，毫秒时间
+     * @param period 周期
+     * @return 指定周期的起始时间，毫秒时间
+     */
+    public static long beginOfPeriod(long time, long period) {
+        long m = time % period;
+        return time - m;
+    }
 }
 
 

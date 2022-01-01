@@ -1,6 +1,7 @@
 package com.developcollect.core.lang.supplier;
 
 import com.developcollect.core.lang.SystemClock;
+import com.developcollect.core.utils.DateUtil;
 
 import java.util.List;
 
@@ -12,10 +13,21 @@ import java.util.List;
  */
 public class PeriodicResetSupplierWrapper<T> implements ResettableSupplier<T> {
 
-    private ResettableSupplier<T> delegate;
-    private long beginTime;
+    private final ResettableSupplier<T> delegate;
+    private final long beginTime;
     private long prevTime;
-    private long period;
+    private final long period;
+
+    public PeriodicResetSupplierWrapper(ResettableSupplier<T> supplier, long period) {
+        this(supplier, DateUtil.beginOfPeriod(SystemClock.now(), period), period);
+    }
+
+    public PeriodicResetSupplierWrapper(ResettableSupplier<T> supplier, long beginTime, long period) {
+        this.beginTime = beginTime;
+        this.prevTime = beginTime;
+        this.period = period;
+        this.delegate = supplier;
+    }
 
     @Override
     public void reset() {
@@ -29,8 +41,10 @@ public class PeriodicResetSupplierWrapper<T> implements ResettableSupplier<T> {
 
     @Override
     public T get() {
-        long now = SystemClock.now();
-        if (now - prevTime > period) {
+        long diff = SystemClock.now() - prevTime;
+        if (diff > period) {
+            long lastNodeNow = diff % period;
+            prevTime += diff - lastNodeNow;
             reset();
         }
         return delegate.get();
