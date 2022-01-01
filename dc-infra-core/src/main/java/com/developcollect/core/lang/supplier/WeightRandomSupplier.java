@@ -1,40 +1,25 @@
 package com.developcollect.core.lang.supplier;
 
 import com.developcollect.core.lang.weight.WeightObj;
-import com.developcollect.core.utils.CollUtil;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 随机按权重
  */
-public class WeightRandomSupplier<T> implements ElementsSupplier<T> {
+public class WeightRandomSupplier<T> extends BaseWeightSupplier<T> {
 
-    protected TreeMap<Double, WeightObj<T>> weightMap = new TreeMap<>();
-    /**
-     * 总权重
-     */
-    protected double totalWeight;
     protected Random random = ThreadLocalRandom.current();
 
     public WeightRandomSupplier() {
     }
 
     public WeightRandomSupplier(Collection<WeightObj<T>> weightObjs) {
-        weightObjs.forEach(this::addElement);
-    }
-
-    public WeightRandomSupplier<T> addElement(double weight, T obj) {
-        return addElement(WeightObj.of(weight, obj));
-    }
-
-
-    public WeightRandomSupplier<T> addElement(WeightObj<T> weightObj) {
-        //以权重区间段的后面的值作为key存当前信息
-        totalWeight += weightObj.getWeight();
-        weightMap.put(totalWeight, weightObj);
-        return this;
+        super(weightObjs);
     }
 
     public WeightRandomSupplier<T> setRandom(Random random) {
@@ -42,14 +27,6 @@ public class WeightRandomSupplier<T> implements ElementsSupplier<T> {
         return this;
     }
 
-    public Collection<WeightObj<T>> weightObjs() {
-        return weightMap.values();
-    }
-
-    @Override
-    public List<T> elements() {
-        return CollUtil.convert(weightObjs(), WeightObj::getObj);
-    }
 
     @Override
     public T get() {
