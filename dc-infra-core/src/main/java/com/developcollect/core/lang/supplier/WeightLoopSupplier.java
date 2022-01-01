@@ -1,6 +1,10 @@
 package com.developcollect.core.lang.supplier;
 
+import com.developcollect.core.lang.weight.WeightObj;
 import lombok.Setter;
+
+import java.util.Map;
+import java.util.Optional;
 
 
 public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements LoopSupplier<T> {
@@ -8,7 +12,7 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
     /**
      * 指向上一个已返回的元素
      */
-    private int cursor = -1;
+    private double cursor = -1;
     /**
      * 遍历的轮数
      */
@@ -20,7 +24,20 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
 
     @Override
     public T get() {
-        return null;
+        ++cursor;
+        if (cursor > totalWeight) {
+            cursor = 0;
+            if (++rounds > maxRounds) {
+                throw new RoundOutOfBoundsException(rounds, maxRounds);
+            }
+        }
+        // 顺序取一个
+        return Optional
+                .of(weightMap)
+                .map(map -> map.ceilingEntry(cursor))
+                .map(Map.Entry::getValue)
+                .map(WeightObj::getObj)
+                .orElse(null);
     }
 
     @Override
@@ -31,6 +48,12 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
 
     @Override
     public boolean hasNext() {
+        if (rounds < maxRounds) {
+            return true;
+        }
+        if (rounds == maxRounds && cursor + 1 <= totalWeight) {
+            return true;
+        }
         return false;
     }
 
