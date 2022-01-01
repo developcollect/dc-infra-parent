@@ -3,7 +3,9 @@ package com.developcollect.core.lang.supplier;
 
 import com.developcollect.core.lang.Assert;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * 循环从数组中返回元素，无穷无尽
@@ -82,7 +84,7 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T[] elements() {
-        return (T[]) array;
+    public List<T> elements() {
+        return (List<T>) Arrays.asList(array);
     }
 }

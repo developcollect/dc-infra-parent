@@ -17,13 +17,6 @@ public interface LoopSupplier<T> extends ResettableSupplier<T> {
     T get();
 
     /**
-     * 基础元素数组
-     *
-     * @return 基础元素数组
-     */
-    T[] elements();
-
-    /**
      * 当前循环的轮次，从1开始
      *
      * @return 循环的轮数
