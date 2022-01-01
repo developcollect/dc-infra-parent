@@ -13,7 +13,7 @@ import java.util.List;
  * @param <P>
  * @param <O>
  */
-public class FallbackChainRouter<P, O> implements Router<P, List<O>> {
+public class FallbackChainRouterWrapper<P, O> implements Router<P, List<O>> {
 
     protected List<O> elements;
     protected Router<P, O> delegate;
@@ -24,7 +24,7 @@ public class FallbackChainRouter<P, O> implements Router<P, List<O>> {
      * @param elements 可用元素
      * @param router   主结果路由器
      */
-    public FallbackChainRouter(List<O> elements, Router<P, O> router) {
+    public FallbackChainRouterWrapper(List<O> elements, Router<P, O> router) {
         this.elements = CollUtil.distinct(new ArrayList<>(elements));
         this.delegate = router;
     }
