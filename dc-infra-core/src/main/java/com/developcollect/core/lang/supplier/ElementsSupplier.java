@@ -13,5 +13,6 @@ public interface ElementsSupplier<T> extends Supplier<T> {
     /**
      * 基础元素集合
      */
-    List<T> elements();
+    <C extends List<T>> C elements();
+
 }
