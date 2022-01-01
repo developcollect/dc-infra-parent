@@ -1,4 +1,4 @@
-package com.developcollect.core.route;
+package com.developcollect.core.lang.route;
 
 import java.util.List;
 import java.util.function.ToIntFunction;

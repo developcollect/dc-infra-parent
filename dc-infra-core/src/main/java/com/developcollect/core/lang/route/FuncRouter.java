@@ -1,11 +1,10 @@
-package com.developcollect.core.route;
+package com.developcollect.core.lang.route;
 
 
 import lombok.Getter;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class FuncRouter<P, O> implements Router<P, O> {
 
