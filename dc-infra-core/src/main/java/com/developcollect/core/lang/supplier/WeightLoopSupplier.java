@@ -3,16 +3,24 @@ package com.developcollect.core.lang.supplier;
 import com.developcollect.core.lang.weight.WeightObj;
 import lombok.Setter;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
 
+/**
+ * 按权重循环提供元素
+ * 注意：权重只能是正整数，小数部分会被忽略
+ *
+ * @param <T> 元素类型
+ * @author zak
+ */
 public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements LoopSupplier<T> {
 
     /**
      * 指向上一个已返回的元素
      */
-    private double cursor = -1;
+    private double cursor = 0;
     /**
      * 遍历的轮数
      */
@@ -21,12 +29,20 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
     @Setter
     private long maxRounds = Long.MAX_VALUE;
 
+    public WeightLoopSupplier() {
+
+    }
+
+    public WeightLoopSupplier(Collection<WeightObj<T>> weightObjs) {
+        weightObjs.forEach(this::addElement);
+    }
+
 
     @Override
     public T get() {
         ++cursor;
         if (cursor > totalWeight) {
-            cursor = 0;
+            cursor = 1;
             if (++rounds > maxRounds) {
                 throw new RoundOutOfBoundsException(rounds, maxRounds);
             }
@@ -59,7 +75,7 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
 
     @Override
     public void reset() {
-        cursor = -1;
+        cursor = 0;
         rounds = 1;
     }
 

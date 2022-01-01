@@ -14,7 +14,7 @@ public class LoopSupplierTest {
         objects.add("A");
         objects.add("B");
         objects.add("C");
-        Supplier<String> stringLoopSupplier = new ConcurrentArrayLoopSupplier<String>(objects);
+        Supplier<String> stringLoopSupplier = new ArrayLoopSupplier<>(objects);
         StopWatch stopWatch = StopWatch.create("33");
         stopWatch.start();
         for (int i = 0; i < 1000009999; i++) {
