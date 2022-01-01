@@ -38,9 +38,13 @@ public class FallbackChainRouter<P, O> implements Router<P, List<O>> {
     @Override
     public List<O> route(P p) {
         O head = routeHead(p);
-        LinkedList<O> list = new LinkedList<>(elements);
-        list.remove(head);
-        list.addFirst(head);
+        LinkedList<O> list = new LinkedList<>();
+        list.add(head);
+        for (O element : elements) {
+            if (!element.equals(head)) {
+                list.add(element);
+            }
+        }
         return list;
     }
 

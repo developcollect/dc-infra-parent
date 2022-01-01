@@ -24,9 +24,13 @@ public class FallbackChainSupplierWrapper<T> implements ElementsSupplier<List<T>
     @Override
     public List<T> get() {
         T head = delegate.get();
-        LinkedList<T> list = new LinkedList<>(delegate.elements());
-        list.remove(head);
-        list.addFirst(head);
+        LinkedList<T> list = new LinkedList<>();
+        list.add(head);
+        for (T element : delegate.elements()) {
+            if (!element.equals(head)) {
+                list.add(element);
+            }
+        }
         return list;
     }
 }
