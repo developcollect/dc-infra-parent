@@ -1,16 +1,20 @@
 package com.developcollect.extra.webdriver;
 
+import com.developcollect.core.utils.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
  * ChromeDriver下载 https://sites.google.com/chromium.org/driver/
+ *
  * @author zak
  * @since 1.0.0
  */
@@ -25,8 +29,11 @@ public class WebDriverUtil {
             //实例化ChromeDriver对象
             //创建无Chrome无头参数
             ChromeOptions options = new ChromeOptions();
-            String optionsArgs = System.getProperty("webdriver.chrome.options.args", "--headless,--disable-gpu");
-            options.addArguments(optionsArgs.split(","));
+            String optionsArgsStr = System.getProperty("webdriver.chrome.options.args", "--headless,--disable-gpu");
+            String[] optionsArgs = Arrays.stream(optionsArgsStr.split(",")).filter(StrUtil::isNotBlank).distinct().toArray(String[]::new);
+            if (optionsArgs.length > 0) {
+                options.addArguments(optionsArgs);
+            }
 
             // 指定driver的位置
 //            System.setProperty("webdriver.chrome.driver", "/Users/zak/tools/other/chromedriver");
@@ -49,6 +56,33 @@ public class WebDriverUtil {
             }
         }
 
+    }
+
+    /**
+     * 网页操作，一次性
+     *
+     * @param url  链接
+     * @param func 自定义处理  比如设置浏览器宽度，高度；抓取信息并返回等等
+     * @author zak
+     */
+    public static synchronized <T> T disposable(final String url, final Function<WebDriver, T> func) {
+        WebDriver driver = null;
+        try {
+            driver = get(url);
+            // 切换到新的标签
+            final LinkedHashSet<String> windowHandles = (LinkedHashSet) driver.getWindowHandles();
+            driver.switchTo().window(windowHandles.toArray(new String[windowHandles.size()])[1]);
+
+            // 调用自定义处理
+            return func.apply(driver);
+        } finally {
+            if (driver != null) {
+                // 关闭当前标签
+                driver.close();
+                // 切换回原始的标签
+                driver.switchTo().window(ORIGIN_WINDOW_HANDLE);
+            }
+        }
     }
 
     /**

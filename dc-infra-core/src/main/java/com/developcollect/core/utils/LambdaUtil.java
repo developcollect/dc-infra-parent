@@ -80,7 +80,7 @@ public class LambdaUtil {
      * 将受检异常通过泛型绕过编译检测
      *
      * @param raiseWrapper 异常包装
-     * @param <T> 返回值类型
+     * @param <T>          返回值类型
      * @return 返回值
      */
     public static <T> T raise(RaiseWrapper<T> raiseWrapper) {
@@ -102,6 +102,12 @@ public class LambdaUtil {
     @FunctionalInterface
     public interface RaiseWrapper<T> {
         T get() throws Throwable;
+    }
+
+
+    public static <T> T wrapperVoid(Runnable runnable) {
+        runnable.run();
+        return null;
     }
 }
 
