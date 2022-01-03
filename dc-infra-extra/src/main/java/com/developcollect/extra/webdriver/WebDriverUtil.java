@@ -25,8 +25,11 @@ public class WebDriverUtil {
             //实例化ChromeDriver对象
             //创建无Chrome无头参数
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless");
-            options.addArguments("--disable-gpu");
+            String optionsArgs = System.getProperty("webdriver.chrome.options.args", "--headless,--disable-gpu");
+            options.addArguments(optionsArgs.split(","));
+
+            // 指定driver的位置
+//            System.setProperty("webdriver.chrome.driver", "/Users/zak/tools/other/chromedriver");
 
             // 关掉日志
             System.setProperty("webdriver.chrome.silentOutput", "true");
