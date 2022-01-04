@@ -21,17 +21,13 @@ public abstract class BaseWeightSupplier<T> implements WeightSupplier<T> {
         weightObjs.forEach(this::addElement);
     }
 
-    public BaseWeightSupplier<T> addElement(double weight, T obj) {
-        return addElement(WeightObj.of(weight, obj));
-    }
-
+    @Override
     public BaseWeightSupplier<T> addElement(WeightObj<T> weightObj) {
         //以权重区间段的后面的值作为key存当前信息
         totalWeight += weightObj.getWeight();
         weightMap.put(totalWeight, weightObj);
         return this;
     }
-
 
     @Override
     public List<T> elements() {
