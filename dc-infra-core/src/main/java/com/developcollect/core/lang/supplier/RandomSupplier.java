@@ -20,7 +20,7 @@ public class RandomSupplier<T> implements ElementsSupplier<T> {
 
     @Override
     public List<T> elements() {
-        return null;
+        return elements;
     }
 
     @Override
@@ -29,5 +29,11 @@ public class RandomSupplier<T> implements ElementsSupplier<T> {
             return null;
         }
         return elements.get(random.nextInt(elements.size()));
+    }
+
+    @Override
+    public RandomSupplier<T> addElement(T ele) {
+        elements.add(ele);
+        return this;
     }
 }

@@ -38,4 +38,9 @@ public abstract class BaseWeightSupplier<T> implements WeightSupplier<T> {
     public Collection<WeightObj<T>> weightObjs() {
         return weightMap.values();
     }
+
+    @Override
+    public ElementsSupplier<T> addElement(T ele) {
+        throw new UnsupportedOperationException();
+    }
 }

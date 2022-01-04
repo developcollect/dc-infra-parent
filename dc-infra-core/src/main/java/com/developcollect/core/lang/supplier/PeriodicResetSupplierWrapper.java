@@ -49,4 +49,9 @@ public class PeriodicResetSupplierWrapper<T> implements ResettableSupplier<T> {
         }
         return delegate.get();
     }
+
+    @Override
+    public ElementsSupplier<T> addElement(T ele) {
+        return delegate.addElement(ele);
+    }
 }

@@ -3,6 +3,7 @@ package com.developcollect.core.lang.supplier;
 
 import com.developcollect.core.lang.Assert;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -18,7 +19,7 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
     /**
      * 元素数组
      */
-    private final Object[] array;
+    private final List<T> list;
     /**
      * 指向上一个已返回的元素
      */
@@ -31,24 +32,24 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
 
     public ArrayLoopSupplier(Collection<T> coll) {
         Assert.notEmpty(coll);
-        this.array = coll.toArray();
+        this.list = new ArrayList<>(coll);
     }
 
     public ArrayLoopSupplier(T[] array) {
         Assert.notEmpty(array);
-        this.array = array;
+        this.list = new ArrayList<>(Arrays.asList(array));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public T get() {
-        if (++cursor == array.length) {
+        if (++cursor == list.size()) {
             cursor = 0;
             if (++rounds > maxRounds) {
                 throw new RoundOutOfBoundsException(rounds, maxRounds);
             }
         }
-        return (T) array[cursor];
+        return (T) list.get(cursor);
     }
 
 
@@ -76,7 +77,7 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
         if (rounds < maxRounds) {
             return true;
         }
-        if (rounds == maxRounds && cursor + 1 < array.length) {
+        if (rounds == maxRounds && cursor + 1 < list.size()) {
             return true;
         }
         return false;
@@ -85,6 +86,11 @@ public class ArrayLoopSupplier<T> implements LoopSupplier<T> {
     @Override
     @SuppressWarnings("unchecked")
     public List<T> elements() {
-        return (List<T>) Arrays.asList(array);
+        return list;
+    }
+
+    @Override
+    public ElementsSupplier<T> addElement(T ele) {
+        return null;
     }
 }

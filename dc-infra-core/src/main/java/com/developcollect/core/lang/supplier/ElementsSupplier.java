@@ -15,4 +15,5 @@ public interface ElementsSupplier<T> extends Supplier<T> {
      */
     <C extends List<T>> C elements();
 
+    ElementsSupplier<T> addElement(T ele);
 }

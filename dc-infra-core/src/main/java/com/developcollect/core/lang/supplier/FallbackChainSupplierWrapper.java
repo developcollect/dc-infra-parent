@@ -33,4 +33,9 @@ public class FallbackChainSupplierWrapper<T> implements ElementsSupplier<List<T>
         }
         return list;
     }
+
+    @Override
+    public ElementsSupplier<List<T>> addElement(List<T> ele) {
+        throw new UnsupportedOperationException();
+    }
 }
