@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 
-public abstract class BaseWeightSupplier<T> implements ElementsSupplier<T> {
+public abstract class BaseWeightSupplier<T> implements WeightSupplier<T> {
     protected TreeMap<Double, WeightObj<T>> weightMap = new TreeMap<>();
     /**
      * 总权重
@@ -38,6 +38,7 @@ public abstract class BaseWeightSupplier<T> implements ElementsSupplier<T> {
         return CollUtil.convert(weightObjs(), WeightObj::getObj);
     }
 
+    @Override
     public Collection<WeightObj<T>> weightObjs() {
         return weightMap.values();
     }
