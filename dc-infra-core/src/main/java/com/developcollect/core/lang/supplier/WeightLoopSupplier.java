@@ -79,4 +79,8 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
         rounds = 1;
     }
 
+    @Override
+    public ElementsSupplier<T> addElement(T ele) {
+        throw new UnsupportedOperationException();
+    }
 }

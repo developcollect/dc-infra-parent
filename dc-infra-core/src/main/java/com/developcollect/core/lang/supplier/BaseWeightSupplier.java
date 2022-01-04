@@ -29,7 +29,6 @@ public abstract class BaseWeightSupplier<T> implements WeightSupplier<T> {
         return this;
     }
 
-    @Override
     public List<T> elements() {
         return CollUtil.convert(weightObjs(), WeightObj::getObj);
     }
@@ -39,8 +38,5 @@ public abstract class BaseWeightSupplier<T> implements WeightSupplier<T> {
         return weightMap.values();
     }
 
-    @Override
-    public ElementsSupplier<T> addElement(T ele) {
-        throw new UnsupportedOperationException();
-    }
+
 }
