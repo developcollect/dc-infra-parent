@@ -4,6 +4,7 @@ import com.developcollect.core.lang.weight.WeightObj;
 import lombok.Setter;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -82,5 +83,10 @@ public class WeightLoopSupplier<T> extends BaseWeightSupplier<T> implements Loop
     @Override
     public ElementsSupplier<T> addElement(T ele) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<T> elements() {
+        return super.elements();
     }
 }
