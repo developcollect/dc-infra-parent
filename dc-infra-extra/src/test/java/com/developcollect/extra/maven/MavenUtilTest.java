@@ -49,4 +49,10 @@ public class MavenUtilTest {
         List<Module> modules = MavenUtil.getDependencyList("D:\\code\\sl\\dc-infra-parent");
         System.out.println(modules);
     }
+
+    @Test
+    public void test_tree() {
+        List<Module> modules = MavenUtil.getDependencyTree("D:\\code\\sl\\dc-infra-parent");
+        System.out.println(modules);
+    }
 }

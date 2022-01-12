@@ -17,6 +17,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -29,6 +30,7 @@ public class MavenUtil {
     private static final Pattern TITLE_PATTERN = Pattern.compile("-*?< (.+?):(.+?) >-*?");
 
     private static final Pattern DEPENDENCY_PATTERN = Pattern.compile(" {3}(.*?):(.*?):(.*?):(.*?):(.*)");
+    private static final Pattern DEPENDENCY_TREE_ITEM_PATTERN = Pattern.compile("([+\\-\\\\| ]+)(.*?):(.*?):(.*?):(.*?):(.*)");
 
     private static final String POM_FILENAME = "pom.xml";
 
@@ -114,9 +116,85 @@ public class MavenUtil {
      *
      * “\-”，    不管在pom文件中最后一个依赖引用是哪个，其前缀都是“\-”，即 ”\-” 仅表后最后一个依赖引用；
      */
-    public static void getDependencyTree(String pomPath) {
-        // mvn dependency:tree
-        // TODO
+    public static List<Module> getDependencyTree(String pomPath) {
+        List<Module> modules = new ArrayList<>();
+        AtomicReference<Module> currModule = new AtomicReference<>();
+        AtomicInteger prevTreeDeep = new AtomicInteger();
+        LinkedList<DependencyTree> dependencyTreeStack = new LinkedList<>();
+
+        mvn(pomPath, Collections.singletonList("dependency:tree"), s -> {
+            System.out.println(s);
+            if (s.startsWith("[INFO] ")) {
+                String line = s.substring(7);
+
+                // dependency 解析
+                Matcher dependencyMatcher = DEPENDENCY_TREE_ITEM_PATTERN.matcher(line);
+                if (dependencyMatcher.find()) {
+                    Dependency dependency = new Dependency();
+                    String treeHead = dependencyMatcher.group(1);
+                    int deep = treeHead.length() / 3;
+                    dependency.setGroupId(dependencyMatcher.group(2));
+                    dependency.setArtifactId(dependencyMatcher.group(3));
+                    dependency.setType(dependencyMatcher.group(4));
+                    dependency.setVersion(dependencyMatcher.group(5));
+                    dependency.setScope(dependencyMatcher.group(6));
+
+                    DependencyTree tree = new DependencyTree();
+                    tree.setDependency(dependency);
+                    tree.setChildren(new ArrayList<>());
+
+                    if (treeHead.startsWith("+")) {
+                        currModule.get().getDependencyTrees().add(tree);
+                        dependencyTreeStack.pollFirst();
+                        dependencyTreeStack.push(tree);
+                    } else {
+                        if (treeHead.endsWith("\\-")) {
+                            dependencyTreeStack.pop();
+                        } else {
+                            DependencyTree prevNode = dependencyTreeStack.getFirst();
+                            prevNode.getChildren().add(tree);
+                            tree.setParent(prevNode);
+                        }
+                    }
+                    prevTreeDeep.set(deep);
+                    return;
+                }
+
+                // title 解析
+                Matcher titleMatcher = TITLE_PATTERN.matcher(line);
+                if (titleMatcher.find()) {
+                    Artifact artifact = new Artifact();
+                    artifact.setGroupId(titleMatcher.group(1));
+                    artifact.setArtifactId(titleMatcher.group(2));
+
+                    Module module = new Module();
+                    module.setArtifact(artifact);
+                    module.setDependencies(new ArrayList<>());
+
+                    currModule.set(module);
+                    modules.add(module);
+                    return;
+                }
+
+                // version
+                //  Building app-front web 1.0.1-SNAPSHOT
+                //  Building bs-ncc-api 1.1.5-SNAPSHOT                                [2/10]
+                if (line.startsWith("Building ")) {
+                    String versionLine = line.substring(9);
+                    versionLine = versionLine.replaceFirst(" *?\\[\\d+?/\\d+?]$", "");
+                    int idx = versionLine.lastIndexOf(" ");
+                    String version = versionLine.substring(idx + 1);
+                    Artifact artifact = currModule.get().getArtifact();
+                    if (artifact == null) {
+                        throw new RuntimeException("artifact is null");
+                    }
+                    artifact.setVersion(version);
+                    return;
+                }
+            }
+        });
+
+        return modules;
     }
 
 
