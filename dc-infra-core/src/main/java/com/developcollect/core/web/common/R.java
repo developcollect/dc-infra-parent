@@ -75,7 +75,7 @@ public class R<T> {
      * @date 2020/9/26 11:17
      */
     public static <E> R<E> ok(E data) {
-        return ok("成功", data);
+        return of(COMMON_SUCCESS_CODE, "成功", data);
     }
 
 
@@ -88,20 +88,20 @@ public class R<T> {
      * @date 2020/9/26 11:17
      */
     public static <E> R<E> ok() {
-        return ok(null);
+        return of(COMMON_SUCCESS_CODE, "成功");
     }
 
 
     public static <E> R<E> fail(String message, E data) {
-        return of(COMMON_SUCCESS_CODE, message, data);
+        return of(COMMON_SERVER_FAIL_CODE, message, data);
     }
 
     public static <E> R<E> fail(E data) {
-        return of(COMMON_SERVER_FAIL_CODE, "", data);
+        return of(COMMON_SERVER_FAIL_CODE, "内部错误", data);
     }
 
     public static <E> R<E> fail() {
-        return fail(null);
+        return of(COMMON_SERVER_FAIL_CODE, "内部错误");
     }
 
 
