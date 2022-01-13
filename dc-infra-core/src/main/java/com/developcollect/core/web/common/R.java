@@ -1,11 +1,16 @@
 package com.developcollect.core.web.common;
 
 
+import lombok.Data;
+import lombok.experimental.Accessors;
+
 /**
  * 提供返回值的封装
  *
  * @param <T>
  */
+@Data
+@Accessors(chain = true)
 public class R<T> {
     /**
      * 通用成功代码
@@ -60,11 +65,7 @@ public class R<T> {
      * @date 2020/9/26 11:17
      */
     public static <E> R<E> ok(String message, E data) {
-        return build(COMMON_SUCCESS_CODE, message, data);
-    }
-
-    public static <E> R<E> okMsg(String message) {
-        return build(COMMON_SUCCESS_CODE, message, null);
+        return of(COMMON_SUCCESS_CODE, message, data);
     }
 
 
@@ -95,18 +96,12 @@ public class R<T> {
     }
 
 
-    /***
-     * 系统异常消息，不要主动抛出，需要国际化
-     * @param message 系统错误消息
-     * @param <E>
-     * @return
-     */
-    public static <E> R<E> failMsg(String message) {
-        return new R<>(COMMON_SERVER_FAIL_CODE, message, null);
+    public static <E> R<E> fail(String message, E data) {
+        return of(COMMON_SUCCESS_CODE, message, data);
     }
 
     public static <E> R<E> fail(E data) {
-        return build(COMMON_SERVER_FAIL_CODE, "", data);
+        return of(COMMON_SERVER_FAIL_CODE, "", data);
     }
 
     public static <E> R<E> fail() {
@@ -115,26 +110,30 @@ public class R<T> {
 
 
 
-    public static <E> R<E> build(int code, String message) {
-        return build(String.valueOf(code), message);
+
+    public static <E> R<E> of(int code, String message) {
+        return of(String.valueOf(code), message);
     }
 
-    public static <E> R<E> build(int code, String message, E data) {
-        return build(String.valueOf(code), message, data);
+    public static <E> R<E> of(int code, String message, E data) {
+        return of(String.valueOf(code), message, data);
     }
 
-    public static <E> R<E> build(String code, String message) {
+    public static <E> R<E> of(String code, String message) {
         return new R<>(code, message, null);
     }
 
-    public static <E> R<E> build(String code, String message, E data) {
+    public static <E> R<E> of(String code, String message, E data) {
         return new R<>(code, message, data);
     }
 
+    public static <E> R<E> build() {
+        return new R<>();
+    }
 
     /**
      * 判断返回结果是否成功
-     * 也就是判断状态码是否在 200(含)-300(不含)之间
+     * 也就是判断状态码是否200
      *
      * @return boolean
      * @author Zhu Kaixiao
@@ -144,41 +143,8 @@ public class R<T> {
         return COMMON_SUCCESS_CODE.equals(this.getCode());
     }
 
-
     public boolean failed() {
         return !success();
-    }
-
-    public String getCode() {
-        return this.code;
-    }
-
-    public String getMessage() {
-        return this.message;
-    }
-
-    public T getData() {
-        return this.data;
-    }
-
-    public R<T> setCode(String code) {
-        this.code = code;
-        return this;
-    }
-
-    public R<T> setMessage(String message) {
-        this.message = message;
-        return this;
-    }
-
-    public R<T> setData(T data) {
-        this.data = data;
-        return this;
-    }
-
-    @Override
-    public String toString() {
-        return "R(code=" + this.getCode() + ", message=" + this.getMessage() + ", data=" + this.getData() + ")";
     }
 
 }
