@@ -123,7 +123,6 @@ public class MavenUtil {
         AtomicInteger prevTreeDeep = new AtomicInteger();
 
         mvn(pomPath, Collections.singletonList("dependency:tree"), s -> {
-            System.out.println(s);
             if (s.startsWith("[INFO] ")) {
                 String line = s.substring(7);
 
