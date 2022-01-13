@@ -111,16 +111,16 @@ public class MavenUtil {
 
     /**
      * “+-”      后面的jar包是顶层依赖包，在pom中进行了声明；
-     *
+     * <p>
      * “|  \-”    后面的jar包是引用包，未在pom中声明；只要声明顶层包，其对应的引用包会自动去仓库中下载；
-     *
+     * <p>
      * “\-”，    不管在pom文件中最后一个依赖引用是哪个，其前缀都是“\-”，即 ”\-” 仅表后最后一个依赖引用；
      */
     public static List<Module> getDependencyTree(String pomPath) {
         List<Module> modules = new ArrayList<>();
         AtomicReference<Module> currModule = new AtomicReference<>();
+        AtomicReference<DependencyTree> parent = new AtomicReference<>();
         AtomicInteger prevTreeDeep = new AtomicInteger();
-        LinkedList<DependencyTree> dependencyTreeStack = new LinkedList<>();
 
         mvn(pomPath, Collections.singletonList("dependency:tree"), s -> {
             System.out.println(s);
@@ -143,19 +143,19 @@ public class MavenUtil {
                     tree.setDependency(dependency);
                     tree.setChildren(new ArrayList<>());
 
-                    if (treeHead.startsWith("+")) {
+                    if (deep == 1) {
                         currModule.get().getDependencyTrees().add(tree);
-                        dependencyTreeStack.pollFirst();
-                        dependencyTreeStack.push(tree);
                     } else {
-                        if (treeHead.endsWith("\\-")) {
-                            dependencyTreeStack.pop();
-                        } else {
-                            DependencyTree prevNode = dependencyTreeStack.getFirst();
-                            prevNode.getChildren().add(tree);
-                            tree.setParent(prevNode);
+                        if (deep == prevTreeDeep.get()) {
+                            parent.set(parent.get().getParent());
+                        } else if (deep < prevTreeDeep.get()) {
+                            parent.set(parent.get().getParent().getParent());
                         }
+                        DependencyTree parentTree = parent.get();
+                        tree.setParent(parentTree);
+                        parentTree.getChildren().add(tree);
                     }
+                    parent.set(tree);
                     prevTreeDeep.set(deep);
                     return;
                 }
@@ -169,8 +169,10 @@ public class MavenUtil {
 
                     Module module = new Module();
                     module.setArtifact(artifact);
-                    module.setDependencies(new ArrayList<>());
+                    module.setDependencyTrees(new ArrayList<>());
 
+                    parent.set(null);
+                    prevTreeDeep.set(0);
                     currModule.set(module);
                     modules.add(module);
                     return;
