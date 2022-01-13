@@ -1,7 +1,9 @@
 package com.developcollect.core.web.common;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
@@ -11,6 +13,8 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class R<T> {
     /**
      * 通用成功代码
@@ -44,14 +48,6 @@ public class R<T> {
      */
     private T data;
 
-    public R() {
-    }
-
-    public R(String code, String message, T data) {
-        this.code = code;
-        this.message = message;
-        this.data = data;
-    }
 
 
     /**
@@ -127,7 +123,7 @@ public class R<T> {
         return new R<>(code, message, data);
     }
 
-    public static <E> R<E> build() {
+    public static <T> R<T> create() {
         return new R<>();
     }
 
