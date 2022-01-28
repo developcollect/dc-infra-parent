@@ -38,4 +38,8 @@ public class ExplorerUtil {
         explorer.open(file.getAbsolutePath());
     }
 
+    public static void open(String filePath) {
+        explorer.open(filePath);
+    }
+
 }
