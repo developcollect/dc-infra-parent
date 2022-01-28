@@ -11,6 +11,10 @@ public class ScheduleRegistry {
     @Getter
     protected ScheduledExecutorService scheduledExecutorService;
 
+    public ScheduleRegistry(ScheduledExecutorService scheduledExecutorService) {
+        this.scheduledExecutorService = scheduledExecutorService;
+    }
+
     public void register(Object obj) {
         Method[] methods = ReflectUtil.getMethods(obj.getClass());
         for (Method method : methods) {
