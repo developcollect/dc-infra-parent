@@ -67,6 +67,6 @@ public class RequestBodyDecodeFilter implements Filter {
 
     private void sendError(HttpServletResponse response, Exception e) {
         response.setStatus(408);
-        ServletUtil.writeJson(response, R.build("408", "解码错误"));
+        ServletUtil.writeJson(response, R.of("408", "解码错误"));
     }
 }
