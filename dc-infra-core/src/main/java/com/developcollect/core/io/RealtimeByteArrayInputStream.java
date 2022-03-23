@@ -25,7 +25,7 @@ public class RealtimeByteArrayInputStream extends InputStream {
     public int read() throws IOException {
         byte[] first = getReadableFirst();
         if (first != null) {
-            return first[readIndex++];
+            return first[readIndex++] & 0x00ff;
         } else {
             if (over) {
                 return -1;
